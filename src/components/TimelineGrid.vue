@@ -21,11 +21,10 @@ const tracksContentRef = ref(null)
 const timeRulerWrapperRef = ref(null)
 const tracksHeaderRef = ref(null)
 const dragOffsetX = ref(0)
+let resizeObserver = null
 
-// 【新增】将干员列表按星级分组
 const groupedCharacters = computed(() => {
   const groups = {}
-  // 遍历所有干员，按 rarity 分组
   store.characterRoster.forEach(char => {
     const rarity = char.rarity || 0
     if (!groups[rarity]) {
@@ -33,10 +32,8 @@ const groupedCharacters = computed(() => {
     }
     groups[rarity].push(char)
   })
-
-  // 将对象转换为数组，并按星级降序排列
   return Object.keys(groups)
-      .sort((a, b) => b - a) // Key 是字符串，但减法会自动转数字
+      .sort((a, b) => b - a)
       .map(rarity => ({
         label: rarity > 0 ? `${rarity} ★` : '未知星级',
         options: groups[rarity]
@@ -47,6 +44,8 @@ function syncRulerScroll() {
   if (timeRulerWrapperRef.value && tracksContentRef.value) {
     timeRulerWrapperRef.value.scrollLeft = tracksContentRef.value.scrollLeft
   }
+  // 滚动时也强制刷新连线位置
+  forceSvgUpdate()
 }
 
 function syncVerticalScroll() {
@@ -87,6 +86,7 @@ function onActionAdd(track, evt) {
   nextTick(() => {
     syncRulerScroll()
     dragOffsetX.value = 0
+    forceSvgUpdate()
   })
 }
 
@@ -121,6 +121,12 @@ onMounted(() => {
   if (tracksContentRef.value) {
     tracksContentRef.value.addEventListener('scroll', syncRulerScroll)
     tracksContentRef.value.addEventListener('scroll', syncVerticalScroll)
+
+    // 添加 ResizeObserver，监控容器大小变化（例如侧边栏展开/收起）
+    resizeObserver = new ResizeObserver(() => {
+      forceSvgUpdate()
+    })
+    resizeObserver.observe(tracksContentRef.value)
   }
   window.addEventListener('keydown', handleKeyDown)
 })
@@ -129,6 +135,9 @@ onUnmounted(() => {
   if (tracksContentRef.value) {
     tracksContentRef.value.removeEventListener('scroll', syncRulerScroll)
     tracksContentRef.value.removeEventListener('scroll', syncVerticalScroll)
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+    }
   }
   window.removeEventListener('keydown', handleKeyDown)
 })
@@ -429,6 +438,7 @@ onUnmounted(() => {
   pointer-events: none;
   overflow: visible;
 }
+
 .avatar-placeholder {
   width: 44px;
   height: 44px;

@@ -12,6 +12,10 @@ const activeCharacterName = computed(() => {
 
 const localSkills = ref([])
 
+function onSkillClick(skillId) {
+  store.selectLibrarySkill(skillId)
+}
+
 watch(
     () => store.activeSkillLibrary,
     (newVal) => {
@@ -24,26 +28,24 @@ watch(
     { immediate: true, deep: true }
 )
 
-// 记录你抓住了按钮的哪个位置
 function onDragStart(evt) {
   const rect = evt.item.getBoundingClientRect();
-  const offsetX = evt.originalEvent.clientX - rect.left;
-  store.setDragOffset(offsetX);
-
-  // 标记状态：正在从技能库拖拽
+  if (evt.originalEvent) {
+    const offsetX = evt.originalEvent.clientX - rect.left;
+    store.setDragOffset(offsetX);
+  }
   document.body.classList.add('is-dragging-from-library');
 }
 
-// 拖拽结束（无论成功还是取消）都清除标记
 function onDragEnd() {
   document.body.classList.remove('is-dragging-from-library');
 }
-
 </script>
 
 <template>
   <div class="library-container">
     <h3>{{ activeCharacterName }} 的技能</h3>
+    <div class="hint-text">点击技能可修改基础数值</div>
 
     <draggable
         class="skill-list"
@@ -62,7 +64,9 @@ function onDragEnd() {
       <template #item="{ element }">
         <div
             class="skill-item"
+            :class="{ 'is-selected': store.selectedLibrarySkillId === element.id }"
             :style="{ '--duration': element.duration }"
+            @click="onSkillClick(element.id)"
         >
           {{ element.name }}
         </div>
@@ -78,11 +82,29 @@ function onDragEnd() {
   flex-direction: column;
   flex-grow: 1;
 }
-/* 恢复为横向排列的按钮库 */
+
 .skill-list {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.hint-text {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.skill-item {
+  transition: all 0.2s;
+  transform: translate(0, 0);
+}
+
+.skill-item.is-selected {
+  border-color: #ffd700;
+  color: #ffd700;
+  background-color: #4a4a3a;
+  box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
 }
 </style>

@@ -14,6 +14,7 @@ dist
 local
 .env.local
 
+deploy.ps1
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
