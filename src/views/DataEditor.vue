@@ -285,8 +285,10 @@ function setRowDelay(char, skillType, rowIndex, val) {
       <div v-if="selectedChar" class="editor-panel">
         <header class="panel-header">
           <div class="header-left">
-            <img :src="selectedChar.avatar" class="avatar-large"
-                 :style="{ borderColor: getRarityColor(selectedChar.rarity) }" />
+            <div class="avatar-wrapper-large" :class="`rarity-${selectedChar.rarity}-border`">
+              <img :src="selectedChar.avatar" @error="e=>e.target.src='/avatars/default.png'" />
+            </div>
+
             <div class="header-titles">
               <h1 class="edit-title">{{ selectedChar.name }}</h1>
               <span class="id-tag">{{ selectedChar.id }}</span>
@@ -466,18 +468,6 @@ function setRowDelay(char, skillType, rowIndex, val) {
   display: block;
 }
 
-.rarity-6-border {
-  border: 2px solid transparent;
-  background: linear-gradient(#2b2b2b, #2b2b2b) padding-box,
-  linear-gradient(135deg, #FFD700, #FF8C00, #FF4500) border-box;
-  box-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
-}
-
-.rarity-5-border { border-color: #ffc400; }
-
-.rarity-4-border { border-color: #d8b4fe; }
-
-
 .char-info { display: flex; flex-direction: column; justify-content: center; }
 .char-name { font-weight: bold; font-size: 14px; margin-bottom: 2px; color: #f0f0f0; }
 
@@ -489,8 +479,8 @@ function setRowDelay(char, skillType, rowIndex, val) {
   -webkit-background-clip: text;
   color: transparent;
 }
-.rarity-5 { color: #f59e0b; }
-.rarity-4 { color: #a855f7; }
+.rarity-5 { color: #ffc400; }
+.rarity-4 { color: #d8b4fe; }
 .rarity-3, .rarity-2, .rarity-1 { color: #888; }
 
 /* Sidebar Footer */
@@ -507,11 +497,23 @@ function setRowDelay(char, skillType, rowIndex, val) {
 /* Header */
 .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 20px; }
 .header-left { display: flex; align-items: center; gap: 20px; }
-.avatar-large {
-  width: 80px; height: 80px; border-radius: 8px; background: #333; object-fit: cover;
+.avatar-wrapper-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background: #333;
+  position: relative;
+  overflow: hidden;
   border: 3px solid #555;
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  transition: border-color 0.2s;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.avatar-wrapper-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .header-titles { display: flex; flex-direction: column; gap: 5px; }
 .edit-title { margin: 0; font-size: 28px; font-weight: 700; color: #f0f0f0; }
@@ -628,6 +630,17 @@ function setRowDelay(char, skillType, rowIndex, val) {
 .delay-num:focus {
   outline: none;
 }
+
+.rarity-6-border {
+  border: 2px solid transparent;
+  background: linear-gradient(#2b2b2b, #2b2b2b) padding-box,
+  linear-gradient(135deg, #FFD700, #FF8C00, #FF4500) border-box;
+  box-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
+}
+
+.rarity-5-border { border-color: #ffc400; }
+
+.rarity-4-border { border-color: #d8b4fe; }
 
 /* Chrome/Safari 隐藏 number input 的上下箭头 */
 .delay-num::-webkit-outer-spin-button,

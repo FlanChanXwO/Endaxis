@@ -545,10 +545,11 @@ onUnmounted(() => {
             <div v-else class="avatar-placeholder"></div>
 
             <div class="avatar-change-hint" v-if="track.id">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
-                <path d="M23 4v6h-6"></path>
-                <path d="M1 20v-6h6"></path>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 1 20.49 15"></path>
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6"></path>
+                <path d="M21.5 8A10 10 0 0 0 3 8"></path>
+                <path d="M2.5 22v-6h6"></path>
+                <path d="M2.5 16A10 10 0 0 0 21 16"></path>
               </svg>
             </div>
           </div>
