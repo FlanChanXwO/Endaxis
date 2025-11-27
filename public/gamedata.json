@@ -138,7 +138,8 @@
       "attack_stagger": 18,
       "link_anomaly_delays": [
         0.8
-      ]
+      ],
+      "variants": []
     },
     {
       "id": "POGRANICHNK",

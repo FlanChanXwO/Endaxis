@@ -87,10 +87,7 @@ function confirmCharacterSelection(charId) {
 
 function removeOperator() {
   if (targetTrackIndex.value !== null) {
-    const track = store.tracks[targetTrackIndex.value]
-    track.id = null
-    track.actions = []
-    store.commitState()
+    store.clearTrack(targetTrackIndex.value)
   }
   isSelectorVisible.value = false
 }

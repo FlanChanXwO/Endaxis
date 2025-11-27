@@ -206,7 +206,7 @@ function updateCustomBarItem(index, key, value) {
 <template>
   <div v-if="selectedAction" class="properties-panel">
     <h3 class="panel-title">动作实例编辑</h3>
-    <div class="type-tag">{{ selectedAction.name }} ({{ currentSkillType }})</div>
+    <div class="type-tag">{{ selectedAction.name }}</div>
 
     <button class="link-btn" @click.stop="store.startLinking()"
             :class="{ 'is-linking': store.isLinking && store.linkingEffectIndex === null }">

@@ -17,6 +17,14 @@ const ELEMENTS = [
   { label: '⚔️ 物理 (Physical)', value: 'physical' }
 ]
 
+const VARIANT_TYPES = [
+  { label: '⚔️ 重击 (Attack)', value: 'attack' },
+  { label: '⚡ 战技 (Skill)', value: 'skill' },
+  { label: '🔗 连携 (Link)', value: 'link' },
+  { label: '🌟 终结技 (Ultimate)', value: 'ultimate' },
+  { label: '☠️ 处决 (Execution)', value: 'execution' }
+]
+
 const EFFECT_NAMES = {
   "break": "破防", "armor_break": "碎甲", "stagger": "猛击", "knockdown": "倒地", "knockup": "击飞",
   "blaze_attach": "灼热附着", "emag_attach": "电磁附着", "cold_attach": "寒冷附着", "nature_attach": "自然附着",
@@ -44,14 +52,6 @@ const filteredRoster = computed(() => {
 const selectedChar = computed(() => {
   return characterRoster.value.find(c => c.id === selectedCharId.value)
 })
-
-// 获取星级颜色辅助函数
-function getRarityColor(rarity) {
-  if (rarity === 6) return '#FFD700'
-  if (rarity === 5) return '#ffc400'
-  if (rarity === 4) return '#d8b4fe'
-  return '#666'
-}
 
 // === 3. 生命周期 ===
 
@@ -88,7 +88,8 @@ function addNewCharacter() {
     skill_duration: 2, skill_spCost: 100, skill_spGain: 0, skill_stagger: 0, skill_gaugeGain: 0, skill_teamGaugeGain: 6, skill_allowed_types: [], skill_anomalies: [],
     link_duration: 1.5, link_cooldown: 15, link_spGain: 0, link_stagger: 0, link_gaugeGain: 0, link_allowed_types: [], link_anomalies: [],
     ultimate_duration: 3, ultimate_gaugeMax: 100, ultimate_spGain: 0, ultimate_stagger: 0, ultimate_gaugeReply: 0, ultimate_allowed_types: [], ultimate_anomalies: [],
-    execution_duration: 1.5, execution_spGain: 20, execution_allowed_types: allGlobalEffects, execution_anomalies: []
+    execution_duration: 1.5, execution_spGain: 20, execution_allowed_types: allGlobalEffects, execution_anomalies: [],
+    variants: [] // 初始变体数组
   }
 
   characterRoster.value.unshift(newChar)
@@ -110,6 +111,163 @@ function deleteCurrentCharacter() {
     }
   }).catch(() => {})
 }
+
+// === 变体动作核心逻辑 (Updated) ===
+
+function getSnapshotFromBase(char, type) {
+  // 1. 基础数值
+  const snapshot = {
+    duration: char[`${type}_duration`] || 1,
+    stagger: char[`${type}_stagger`] || 0,
+    spGain: char[`${type}_spGain`] || 0,
+    element: char[`${type}_element`],
+    // 2. 关键修复：同时深拷贝基础技能允许的效果池
+    // 如果基础技能没有配置(undefined)，则默认为空数组
+    allowedTypes: char[`${type}_allowed_types`] ? [...char[`${type}_allowed_types`]] : []
+  }
+
+  if (type === 'skill') {
+    snapshot.spCost = char.skill_spCost || 0
+    snapshot.gaugeGain = char.skill_gaugeGain || 0
+    snapshot.teamGaugeGain = char.skill_teamGaugeGain || 0
+  }
+  else if (type === 'link') {
+    snapshot.cooldown = char.link_cooldown || 0
+    snapshot.gaugeGain = char.link_gaugeGain || 0
+  }
+  else if (type === 'ultimate') {
+    snapshot.gaugeCost = char.ultimate_gaugeMax || 0
+    snapshot.gaugeGain = char.ultimate_gaugeReply || 0
+  }
+  return snapshot
+}
+
+function addVariant() {
+  if (!selectedChar.value.variants) selectedChar.value.variants = []
+
+  const defaultType = 'attack'
+  const baseStats = getSnapshotFromBase(selectedChar.value, defaultType)
+
+  selectedChar.value.variants.push({
+    id: `v_${Date.now()}`,
+    name: '强化重击',
+    type: defaultType,
+    physicalAnomaly: [],
+    anomalyRowDelays: [],
+    ...baseStats
+  })
+}
+
+function removeVariant(idx) {
+  if (selectedChar.value.variants) {
+    selectedChar.value.variants.splice(idx, 1)
+  }
+}
+
+function onVariantTypeChange(variant) {
+  if (!selectedChar.value) return
+  const newStats = getSnapshotFromBase(selectedChar.value, variant.type)
+  Object.assign(variant, newStats)
+
+  if (variant.name === '新强化动作' || variant.name.includes('强化')) {
+    const typeObj = VARIANT_TYPES.find(t => t.value === variant.type)
+
+    if (typeObj) {
+      const labelName = typeObj.label.split(' ')[1]
+
+      variant.name = `强化${labelName}`
+    }
+  }
+}
+
+// === 变体Checkbox逻辑 (New) ===
+
+function onVariantCheckChange(variant, key) {
+  if (!variant.allowedTypes) variant.allowedTypes = []
+  const list = variant.allowedTypes
+  const isChecked = list.includes(key)
+
+  const elementalGroups = [
+    ['burning', 'blaze_attach', 'blaze_burst'],
+    ['conductive', 'emag_attach', 'emag_burst'],
+    ['frozen', 'cold_attach', 'cold_burst'],
+    ['corrosion', 'nature_attach', 'nature_burst']
+  ]
+
+  const group = elementalGroups.find(g => g.includes(key))
+  if (group) {
+    if (isChecked) {
+      group.forEach(item => { if (!list.includes(item)) list.push(item) })
+    } else {
+      variant.allowedTypes = list.filter(item => !group.includes(item))
+    }
+  }
+
+  const physicalGroup = ['stagger', 'armor_break', 'knockup', 'knockdown'];
+  const physicalBase = ['break', 'ice_shatter'];
+
+  if (isChecked && physicalGroup.includes(key)) {
+    physicalBase.forEach(baseItem => {
+      if (!list.includes(baseItem)) list.push(baseItem);
+    });
+  }
+}
+
+// 获取变体可用的状态选项 (受 allowedTypes 限制)
+function getVariantAvailableOptions(variant) {
+  const allowedList = variant.allowedTypes || []
+  return allowedList.map(key => {
+    if (EFFECT_NAMES[key]) {
+      return { label: EFFECT_NAMES[key], value: key }
+    }
+    const exclusive = selectedChar.value?.exclusive_buffs.find(b => b.key === key)
+    if (exclusive) {
+      return { label: `★ ${exclusive.name}`, value: key }
+    }
+    return { label: key, value: key }
+  })
+}
+
+// === 变体矩阵操作逻辑 ===
+
+function addVariantRow(variant) {
+  if (!variant.physicalAnomaly) variant.physicalAnomaly = []
+  // 默认使用允许列表里的第一个，或者 'default'
+  const defaultType = (variant.allowedTypes && variant.allowedTypes.length > 0) ? variant.allowedTypes[0] : 'default'
+  variant.physicalAnomaly.push([{ type: defaultType, stacks: 1, duration: 0 }])
+}
+
+function addVariantEffect(variant, rowIndex) {
+  if (variant.physicalAnomaly && variant.physicalAnomaly[rowIndex]) {
+    const defaultType = (variant.allowedTypes && variant.allowedTypes.length > 0) ? variant.allowedTypes[0] : 'default'
+    variant.physicalAnomaly[rowIndex].push({ type: defaultType, stacks: 1, duration: 0 })
+  }
+}
+
+function removeVariantEffect(variant, rowIndex, colIndex) {
+  if (variant.physicalAnomaly && variant.physicalAnomaly[rowIndex]) {
+    variant.physicalAnomaly[rowIndex].splice(colIndex, 1)
+    if (variant.physicalAnomaly[rowIndex].length === 0) {
+      variant.physicalAnomaly.splice(rowIndex, 1)
+      if (variant.anomalyRowDelays) variant.anomalyRowDelays.splice(rowIndex, 1)
+    }
+  }
+}
+
+function getVariantRowDelay(variant, rowIndex) {
+  const delays = variant.anomalyRowDelays || []
+  return delays[rowIndex] || 0
+}
+
+function setVariantRowDelay(variant, rowIndex, val) {
+  if (!variant.anomalyRowDelays) variant.anomalyRowDelays = []
+  while (variant.anomalyRowDelays.length <= rowIndex) {
+    variant.anomalyRowDelays.push(0)
+  }
+  variant.anomalyRowDelays[rowIndex] = val
+}
+
+// === 通用逻辑 ===
 
 function onCheckChange(char, skillType, key) {
   const fieldName = `${skillType}_allowed_types`
@@ -146,7 +304,6 @@ function onCheckChange(char, skillType, key) {
 function onSkillGaugeInput(event) {
   const val = Number(event.target.value)
   if (selectedChar.value) {
-    // 联动更新队友充能，系数 0.5
     selectedChar.value.skill_teamGaugeGain = val * 0.5
   }
 }
@@ -183,7 +340,7 @@ function getAvailableAnomalyOptions(skillType) {
   })
 }
 
-// === 5. 二维数组处理逻辑 (New 2D Logic) ===
+// === 二维数组通用处理逻辑 (Standard Skills) ===
 
 function getAnomalyRows(char, skillType) {
   if (!char) return []
@@ -227,7 +384,6 @@ function removeAnomaly(char, skillType, rowIndex, colIndex) {
   }
 }
 
-// 获取行延迟
 function getRowDelay(char, skillType, rowIndex) {
   if (!char) return 0
   const key = `${skillType}_anomaly_delays`
@@ -235,12 +391,10 @@ function getRowDelay(char, skillType, rowIndex) {
   return delays[rowIndex] || 0
 }
 
-// 设置行延迟
 function setRowDelay(char, skillType, rowIndex, val) {
   if (!char) return
   const key = `${skillType}_anomaly_delays`
   if (!char[key]) char[key] = []
-  // 补齐数组
   while (char[key].length <= rowIndex) {
     char[key].push(0)
   }
@@ -304,6 +458,7 @@ function setRowDelay(char, skillType, rowIndex, val) {
           <button :class="{ active: activeTab === 'link' }" @click="activeTab = 'link'">🔗 连携</button>
           <button :class="{ active: activeTab === 'ultimate' }" @click="activeTab = 'ultimate'">🌟 终结技</button>
           <button :class="{ active: activeTab === 'execution' }" @click="activeTab = 'execution'">☠️ 处决</button>
+          <button :class="{ active: activeTab === 'variants' }" @click="activeTab = 'variants'">✨ 变体</button>
         </div>
 
         <div class="tab-content">
@@ -352,6 +507,103 @@ function setRowDelay(char, skillType, rowIndex, val) {
             </div>
           </div>
 
+          <div v-show="activeTab === 'variants'" class="form-section">
+            <div class="info-banner">
+              此处添加的动作将拥有<strong>独立的数值</strong>（从创建时刻的基础数值深拷贝而来）。<br>
+              修改此处数值不会影响基础技能，反之亦然。
+            </div>
+
+            <div v-for="(variant, idx) in (selectedChar.variants || [])" :key="idx" class="variant-card">
+              <div class="variant-header">
+                <span class="variant-idx">#{{ idx + 1 }}</span>
+                <button class="btn-icon-del" @click="removeVariant(idx)">×</button>
+              </div>
+
+              <div class="form-grid three-col">
+                <div class="form-group">
+                  <label>显示名称</label>
+                  <input v-model="variant.name" placeholder="例如：强化战技" />
+                </div>
+
+                <div class="form-group">
+                  <label>动作类型 (切换将重置数值)</label>
+                  <select v-model="variant.type" @change="onVariantTypeChange(variant)">
+                    <option v-for="t in VARIANT_TYPES" :key="t.value" :value="t.value">
+                      {{ t.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>唯一标识 (ID后缀)</label>
+                  <input v-model="variant.id" placeholder="英文key, 如 s1_enhanced" />
+                </div>
+
+                <div class="form-group"><label>持续时间</label><input type="number" step="0.1" v-model.number="variant.duration"></div>
+                <div class="form-group"><label>失衡值</label><input type="number" v-model.number="variant.stagger"></div>
+                <div class="form-group"><label>SP 回复</label><input type="number" v-model.number="variant.spGain"></div>
+
+                <div class="form-group" v-if="variant.type === 'skill'"><label>SP 消耗</label><input type="number" v-model.number="variant.spCost"></div>
+                <div class="form-group" v-if="variant.type === 'skill'"><label>自身充能</label><input type="number" v-model.number="variant.gaugeGain"></div>
+                <div class="form-group" v-if="variant.type === 'skill'"><label>队友充能</label><input type="number" v-model.number="variant.teamGaugeGain"></div>
+
+                <div class="form-group" v-if="variant.type === 'link'"><label>冷却时间 (CD)</label><input type="number" v-model.number="variant.cooldown"></div>
+                <div class="form-group" v-if="variant.type === 'link'"><label>自身充能</label><input type="number" v-model.number="variant.gaugeGain"></div>
+
+                <div class="form-group" v-if="variant.type === 'ultimate'"><label>充能消耗 (Max)</label><input type="number" v-model.number="variant.gaugeCost"></div>
+                <div class="form-group" v-if="variant.type === 'ultimate'"><label>充能返还/回复</label><input type="number" v-model.number="variant.gaugeGain"></div>
+              </div>
+
+              <div class="checkbox-grid" style="margin-top: 15px;">
+                <label v-for="key in effectKeys" :key="`v_${variant.id}_${key}`" class="cb-item">
+                  <input type="checkbox" :value="key" v-model="variant.allowedTypes" @change="onVariantCheckChange(variant, key)">
+                  {{ EFFECT_NAMES[key] }}
+                </label>
+                <label v-for="buff in selectedChar.exclusive_buffs" :key="`v_${variant.id}_${buff.key}`" class="cb-item exclusive">
+                  <input type="checkbox" :value="buff.key" v-model="variant.allowedTypes">
+                  ★ {{ buff.name }}
+                </label>
+              </div>
+
+              <div class="matrix-editor-area" style="margin-top: 15px; border-top: 1px dashed #444; padding-top: 15px;">
+                <label style="font-size: 12px; color: #aaa; margin-bottom: 8px; display: block; font-weight: bold;">附加异常状态</label>
+
+                <div class="anomalies-grid-editor">
+                  <div v-for="(row, rIndex) in (variant.physicalAnomaly || [])" :key="rIndex" class="editor-row">
+                    <div class="row-delay-input" title="该行起始延迟 (秒)">
+                      <span class="delay-icon">↦</span>
+                      <input
+                          type="number"
+                          :value="getVariantRowDelay(variant, rIndex)"
+                          @input="e => setVariantRowDelay(variant, rIndex, Number(e.target.value))"
+                          step="0.1"
+                          min="0"
+                          class="delay-num"
+                      />
+                    </div>
+                    <div v-for="(item, cIndex) in row" :key="cIndex" class="editor-card">
+                      <div class="card-header">
+                        <span class="card-label">R{{rIndex+1}}:C{{cIndex+1}}</span>
+                        <button class="btn-icon-del" @click="removeVariantEffect(variant, rIndex, cIndex)">×</button>
+                      </div>
+                      <select v-model="item.type" class="card-input">
+                        <option v-for="opt in getVariantAvailableOptions(variant)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                      </select>
+                      <div class="card-row">
+                        <input type="number" v-model.number="item.stacks" placeholder="层" class="mini-input"><span class="unit">层</span>
+                        <input type="number" v-model.number="item.duration" placeholder="秒" step="0.5" class="mini-input"><span class="unit">s</span>
+                      </div>
+                    </div>
+                    <button class="btn-add-col" @click="addVariantEffect(variant, rIndex)">+</button>
+                  </div>
+                  <button class="btn-add-row" @click="addVariantRow(variant)" :disabled="getVariantAvailableOptions(variant).length === 0">+ 新增效果行</button>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-add-row" @click="addVariant" style="margin-top: 20px;">+ 添加新变体动作</button>
+          </div>
+
           <template v-for="type in ['attack', 'skill', 'link', 'ultimate', 'execution']" :key="type">
             <div v-show="activeTab === type" class="form-section">
               <h3 class="section-title">数值配置</h3>
@@ -365,6 +617,7 @@ function setRowDelay(char, skillType, rowIndex, val) {
                     </option>
                   </select>
                 </div>
+
                 <div class="form-group"><label>持续时间 (s)</label><input type="number" step="0.1" v-model.number="selectedChar[`${type}_duration`]"></div>
 
                 <div class="form-group" v-if="type !== 'link'"><label>SP 回复</label><input type="number" v-model.number="selectedChar[`${type}_spGain`]"></div>
@@ -398,7 +651,6 @@ function setRowDelay(char, skillType, rowIndex, val) {
                 <h3 class="section-title">默认附带状态 (二维矩阵)</h3>
                 <div class="anomalies-grid-editor">
                   <div v-for="(row, rIndex) in getAnomalyRows(selectedChar, type)" :key="rIndex" class="editor-row">
-
                     <div class="row-delay-input" title="该行起始延迟 (秒)">
                       <span class="delay-icon">↦</span>
                       <input
@@ -410,7 +662,6 @@ function setRowDelay(char, skillType, rowIndex, val) {
                           class="delay-num"
                       />
                     </div>
-
                     <div v-for="(item, cIndex) in row" :key="cIndex" class="editor-card">
                       <div class="card-header">
                         <span class="card-label">R{{rIndex+1}}:C{{cIndex+1}}</span>
@@ -483,12 +734,7 @@ function setRowDelay(char, skillType, rowIndex, val) {
 
 .char-meta { font-size: 12px; font-weight: bold; }
 
-.rarity-6 {
-  background: linear-gradient(45deg, #FFD700, #FF8C00, #FF4500);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
+.rarity-6 { background: linear-gradient(45deg, #FFD700, #FF8C00, #FF4500); background-clip: text; -webkit-background-clip: text; color: transparent; }
 .rarity-5 { color: #ffc400; }
 .rarity-4 { color: #d8b4fe; }
 .rarity-3, .rarity-2, .rarity-1 { color: #888; }
@@ -507,24 +753,8 @@ function setRowDelay(char, skillType, rowIndex, val) {
 /* Header */
 .panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 20px; }
 .header-left { display: flex; align-items: center; gap: 20px; }
-.avatar-wrapper-large {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  background: #333;
-  position: relative;
-  overflow: hidden;
-  border: 3px solid #555;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-.avatar-wrapper-large img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+.avatar-wrapper-large { width: 80px; height: 80px; border-radius: 8px; background: #333; position: relative; overflow: hidden; border: 3px solid #555; box-shadow: 0 4px 8px rgba(0,0,0,0.3); flex-shrink: 0; box-sizing: border-box; }
+.avatar-wrapper-large img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .header-titles { display: flex; flex-direction: column; gap: 5px; }
 .edit-title { margin: 0; font-size: 28px; font-weight: 700; color: #f0f0f0; }
 .id-tag { font-size: 14px; color: #666; font-family: 'Roboto Mono', monospace; background: #252526; padding: 2px 8px; border-radius: 4px; border: 1px solid #333; align-self: flex-start; }
@@ -544,24 +774,31 @@ function setRowDelay(char, skillType, rowIndex, val) {
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px 20px; }
 .form-grid.three-col { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.form-grid.four-col { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .form-group { display: flex; flex-direction: column; }
 .form-group.full-width { grid-column: 1 / -1; }
 .form-group label { margin-bottom: 8px; color: #aaa; font-size: 12px; font-weight: 500; }
 .form-group input, .form-group select { background: #1a1a1a; border: 1px solid #444; color: #f0f0f0; padding: 10px 12px; border-radius: 4px; font-size: 14px; transition: border-color 0.2s; }
 .form-group input:focus, .form-group select:focus { border-color: #ffd700; outline: none; background: #111; }
-.highlight-input input { border-color: #00e5ff; color: #00e5ff; }
 
-/* Special Checkbox */
-.checkbox-wrapper {
-  background: #1a1a1a; border: 1px solid #444; padding: 0 15px; border-radius: 4px; display: flex; align-items: center; height: 38px; cursor: pointer; transition: all 0.2s;
+/* Variant Card Style (New) */
+.variant-card {
+  background: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 4px solid #ffd700;
 }
+.variant-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+.variant-idx { font-weight: bold; color: #ffd700; font-size: 12px; }
+
+/* ... existing styles ... */
+.checkbox-wrapper { background: #1a1a1a; border: 1px solid #444; padding: 0 15px; border-radius: 4px; display: flex; align-items: center; height: 38px; cursor: pointer; transition: all 0.2s; }
 .checkbox-wrapper:hover { border-color: #666; }
 .checkbox-wrapper.is-checked { border-color: #ffd700; background: rgba(255, 215, 0, 0.05); }
 .checkbox-wrapper input { margin-right: 10px; cursor: pointer; width: 16px; height: 16px; accent-color: #ffd700; }
 .checkbox-wrapper label { margin: 0; cursor: pointer; color: #ccc; }
 
-/* Exclusive List */
 .exclusive-list { display: flex; flex-direction: column; gap: 10px; }
 .exclusive-row { display: flex; gap: 10px; align-items: center; }
 .exclusive-row input { background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; font-size: 13px; }
@@ -571,14 +808,12 @@ function setRowDelay(char, skillType, rowIndex, val) {
 .btn-small-add { background: #333; border: 1px dashed #666; color: #aaa; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 13px; transition: all 0.2s; }
 .btn-small-add:hover { border-color: #ffd700; color: #ffd700; background: #3a3a3a; }
 
-/* Checkbox Grid */
 .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 6px; border: 1px solid #333; margin-bottom: 20px; }
 .cb-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #bbb; cursor: pointer; user-select: none; padding: 5px; border-radius: 4px; transition: background 0.1s; }
 .cb-item:hover { background: #252526; }
 .cb-item input { accent-color: #ffd700; width: 16px; height: 16px; }
 .cb-item.exclusive { color: #ffd700; }
 
-/* Matrix Editor */
 .matrix-editor-area { margin-top: 25px; border-top: 1px dashed #444; padding-top: 20px; }
 .anomalies-grid-editor { display: flex; flex-direction: column; gap: 10px; }
 .editor-row { display: flex; flex-wrap: wrap; gap: 10px; background: #1f1f1f; padding: 10px; border-radius: 6px; border: 1px solid #333; align-items: center; }
@@ -599,7 +834,6 @@ function setRowDelay(char, skillType, rowIndex, val) {
 .info-banner { background: rgba(50, 50, 50, 0.5); padding: 12px; border-left: 3px solid #666; color: #aaa; margin-bottom: 20px; font-size: 13px; border-radius: 0 4px 4px 0; }
 .empty-state { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 400px; color: #666; font-size: 16px; border: 2px dashed #333; border-radius: 8px; margin-top: 20px; }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #1e1e1e; }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
@@ -607,55 +841,13 @@ function setRowDelay(char, skillType, rowIndex, val) {
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* 行延迟输入框样式 */
-.row-delay-input {
-  display: flex;
-  align-items: center;
-  margin-right: 6px;
-  background: #222;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0 2px;
-  height: 22px;
-}
+.row-delay-input { display: flex; align-items: center; margin-right: 6px; background: #222; border: 1px solid #555; border-radius: 3px; padding: 0 2px; height: 22px; }
+.delay-icon { color: #888; font-size: 10px; margin-right: 2px; user-select: none; }
+.delay-num { width: 30px !important; border: none !important; background: transparent !important; padding: 0 !important; height: 100% !important; font-size: 11px !important; text-align: center; color: #ffd700 !important; }
+.delay-num:focus { outline: none; }
+.delay-num::-webkit-outer-spin-button, .delay-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.delay-icon {
-  color: #888;
-  font-size: 10px;
-  margin-right: 2px;
-  user-select: none;
-}
-
-.delay-num {
-  width: 30px !important;
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  height: 100% !important;
-  font-size: 11px !important;
-  text-align: center;
-  color: #ffd700 !important;
-}
-
-.delay-num:focus {
-  outline: none;
-}
-
-.rarity-6-border {
-  border: 2px solid transparent;
-  background: linear-gradient(#2b2b2b, #2b2b2b) padding-box,
-  linear-gradient(135deg, #FFD700, #FF8C00, #FF4500) border-box;
-  box-shadow: 0 0 6px rgba(255, 140, 0, 0.3);
-}
-
+.rarity-6-border { border: 2px solid transparent; background: linear-gradient(#2b2b2b, #2b2b2b) padding-box, linear-gradient(135deg, #FFD700, #FF8C00, #FF4500) border-box; box-shadow: 0 0 6px rgba(255, 140, 0, 0.3); }
 .rarity-5-border { border-color: #ffc400; }
-
 .rarity-4-border { border-color: #d8b4fe; }
-
-/* Chrome/Safari 隐藏 number input 的上下箭头 */
-.delay-num::-webkit-outer-spin-button,
-.delay-num::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
 </style>

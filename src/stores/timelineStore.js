@@ -163,6 +163,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         const getAllowed = (list) => list || []
         const getRowDelays = (list) => list || []
 
+        // 1. 创建标准基础技能的辅助函数
         const createBaseSkill = (suffix, type, name) => {
             const globalId = `${activeChar.id}_${suffix}`
             const globalOverride = characterOverrides.value[globalId] || {}
@@ -210,13 +211,52 @@ export const useTimelineStore = defineStore('timeline', () => {
             }
         }
 
-        return [
+        // 2. 创建变体技能的辅助函数
+        const createVariantSkill = (variant) => {
+            // 使用 variants 数组里的 id 拼接生成全局唯一ID
+            const globalId = `${activeChar.id}_variant_${variant.id}`
+            const globalOverride = characterOverrides.value[globalId] || {}
+
+            // 变体的默认值，防止某些字段缺失导致报错
+            const defaults = {
+                duration: 1,
+                cooldown: 0,
+                spCost: 0,
+                spGain: 0,
+                gaugeCost: 0,
+                gaugeGain: 0,
+                stagger: 0,
+                teamGaugeGain: 0,
+                element: activeChar.element || 'physical' // 默认继承角色属性
+            }
+
+            // 合并顺序：默认值 -> 变体原始数据 -> 运行时覆写
+            const merged = { ...defaults, ...variant, ...globalOverride }
+
+            return {
+                ...merged, // 包含了 name, type 等
+                id: globalId, // 强制覆盖 ID 为计算后的 globalId
+                // 确保异常状态数组存在
+                physicalAnomaly: getAnomalies(variant.physicalAnomaly),
+                allowedTypes: getAllowed(variant.allowedTypes),
+                anomalyRowDelays: getRowDelays(variant.anomalyRowDelays)
+            }
+        }
+
+        // 3. 生成标准技能列表
+        const standardSkills = [
             createBaseSkill('attack', 'attack', '重击'),
             createBaseSkill('execution', 'execution', '处决'),
             createBaseSkill('skill', 'skill', '战技'),
             createBaseSkill('link', 'link', '连携'),
             createBaseSkill('ultimate', 'ultimate', '终结技')
         ]
+
+        // 4. 生成变体技能列表
+        const variantSkills = (activeChar.variants || []).map(v => createVariantSkill(v))
+
+        // 5. 合并并返回
+        return [...standardSkills, ...variantSkills]
     })
 
     // ===================================================================================
@@ -369,11 +409,64 @@ export const useTimelineStore = defineStore('timeline', () => {
     function changeTrackOperator(trackIndex, oldOperatorId, newOperatorId) {
         const track = tracks.value[trackIndex];
         if (track) {
-            if (tracks.value.some((t, i) => i !== trackIndex && t.id === newOperatorId)) { alert('该干员已在另一条轨道上！'); return; }
-            track.id = newOperatorId; track.actions = [];
-            if (activeTrackId.value === oldOperatorId) activeTrackId.value = newOperatorId;
-            commitState()
+            // 检查新干员是否已经被占用
+            if (tracks.value.some((t, i) => i !== trackIndex && t.id === newOperatorId)) {
+                alert('该干员已在另一条轨道上！');
+                return;
+            }
+
+            // 1. 收集该轨道上即将被删除的所有动作 ID
+            const actionIdsToDelete = new Set(track.actions.map(a => a.instanceId));
+
+            // 2. 过滤掉所有与这些动作有关的连线 (无论是作为起点 from 还是终点 to)
+            if (actionIdsToDelete.size > 0) {
+                connections.value = connections.value.filter(conn =>
+                    !actionIdsToDelete.has(conn.from) && !actionIdsToDelete.has(conn.to)
+                );
+            }
+
+            // 3. 执行更换与清空
+            track.id = newOperatorId;
+            track.actions = [];
+
+            // 4. 更新选中状态
+            if (activeTrackId.value === oldOperatorId) {
+                activeTrackId.value = newOperatorId;
+            }
+
+            // 5. 如果当前选中的动作恰好是被删除的动作，清除选中状态
+            if (selectedActionId.value && actionIdsToDelete.has(selectedActionId.value)) {
+                clearSelection();
+            }
+
+            commitState();
         }
+    }
+
+    function clearTrack(trackIndex) {
+        const track = tracks.value[trackIndex];
+        if (!track) return;
+
+        // 1. 收集即将删除的动作 ID
+        const actionIdsToDelete = new Set(track.actions.map(a => a.instanceId));
+
+        // 2. 清理连线
+        if (actionIdsToDelete.size > 0) {
+            connections.value = connections.value.filter(conn =>
+                !actionIdsToDelete.has(conn.from) && !actionIdsToDelete.has(conn.to)
+            );
+        }
+
+        // 3. 清空轨道
+        track.id = null;
+        track.actions = [];
+
+        // 4. 清理选中状态
+        if (selectedActionId.value && actionIdsToDelete.has(selectedActionId.value)) {
+            clearSelection();
+        }
+
+        commitState();
     }
 
     function updateTrackMaxGauge(trackId, value) { const track = tracks.value.find(t => t.id === trackId); if (track) { track.maxGaugeOverride = value; commitState(); } }
@@ -712,7 +805,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         selectedActionId, selectedLibrarySkillId, multiSelectedIds, clipboard, isLinking, linkingSourceId, linkingEffectIndex, showCursorGuide, isBoxSelectMode, cursorCurrentTime,
         snapStep,
         teamTracksInfo, activeSkillLibrary, timeBlockWidth, ELEMENT_COLORS, getActionPositionInfo, getIncomingConnections, getCharacterElementColor, isActionSelected,
-        fetchGameData, exportProject, importProject, TOTAL_DURATION, selectTrack, changeTrackOperator, selectLibrarySkill, updateLibrarySkill, selectAction, updateAction, removeAction,
+        fetchGameData, exportProject, importProject, TOTAL_DURATION, selectTrack, changeTrackOperator, clearTrack, selectLibrarySkill, updateLibrarySkill, selectAction, updateAction, removeAction,
         addSkillToTrack, setDraggingSkill, setDragOffset, setScrollLeft, calculateGlobalSpData, calculateGaugeData, calculateGlobalStaggerData, updateTrackInitialGauge, updateTrackMaxGauge,
         startLinking, confirmLinking, cancelLinking, removeConnection, getColor, toggleCursorGuide, toggleBoxSelectMode, setCursorTime, toggleSnapStep, nudgeSelection,
         setMultiSelection, clearSelection, copySelection, pasteSelection, removeCurrentSelection, undo, redo, commitState,
