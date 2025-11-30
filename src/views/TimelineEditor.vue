@@ -259,8 +259,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
           <ul class="link-list">
             <li>
               <span class="link-label">📺 视频教程：</span>
-              <a href="#" target="_blank" class="highlight-link">
-                点击观看 Bilibili 教程 (待补充)
+              <a href="https://www.bilibili.com/video/BV1gSSvB6E69/?vd_source=75ba4ea898b31481694ff91bb4513587" target="_blank" class="highlight-link">
+                点击观看 Bilibili 教程
               </a>
             </li>
             <li>

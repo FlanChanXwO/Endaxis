@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import draggable from 'vuedraggable'
 
@@ -203,6 +203,16 @@ function updateCustomBarItem(index, key, value) {
   newList[index] = { ...newList[index], [key]: value }
   store.updateAction(store.selectedActionId, { customBars: newList })
 }
+
+watch(
+    () => store.selectedAnomalyIndex,
+    (newVal) => {
+      if (newVal) {
+        editingIndexObj.value = { r: newVal.rowIndex, c: newVal.colIndex }
+      }
+    },
+    { immediate: true, deep: true }
+)
 </script>
 
 <template>

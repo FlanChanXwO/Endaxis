@@ -187,7 +187,14 @@ const renderableAnomalies = computed(() => {
 })
 
 function onDeleteClick() { store.removeAction(props.action.instanceId) }
-function onIconClick(evt, index) { evt.stopPropagation(); if (store.isLinking) { store.confirmLinking(props.action.instanceId, index) } else { store.selectAction(props.action.instanceId) } }
+function onIconClick(evt, item, flatIndex) {
+  evt.stopPropagation()
+  if (store.isLinking) {
+    store.confirmLinking(props.action.instanceId, flatIndex)
+  } else {
+    store.selectAnomaly(props.action.instanceId, item.rowIndex, item.colIndex)
+  }
+}
 </script>
 
 <template>
@@ -226,10 +233,13 @@ function onIconClick(evt, index) { evt.stopPropagation(); if (store.isLinking) {
     <div v-if="!isGhostMode" class="anomalies-overlay">
       <div v-for="(item, index) in renderableAnomalies" :key="`${item.rowIndex}-${item.colIndex}`"
            class="anomaly-wrapper" :style="item.style">
+
         <div :id="`anomaly-${action.instanceId}-${index}`"
              class="anomaly-icon-box"
              :class="{ 'is-logic-tick': item.data.type === 'logic_tick' }"
-             @mousedown.stop="onIconClick($event, index)" @click.stop>
+
+             @mousedown.stop="onIconClick($event, item, index)"
+             @click.stop>
 
           <img :src="getIconPath(item.data.type)" class="anomaly-icon"/>
 

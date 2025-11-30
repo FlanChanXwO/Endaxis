@@ -54,10 +54,10 @@ export const useTimelineStore = defineStore('timeline', () => {
     // 3. 交互状态 (UI State)
     // ===================================================================================
 
+    const selectedAnomalyIndex = ref(null)
+
     const activeTrackId = ref(null)
     const timelineScrollLeft = ref(0)
-
-    // [已删除] const zoomLevel = ref(1.0) <--- 缩放状态已移除
 
     const showCursorGuide = ref(false)
     const cursorCurrentTime = ref(0)
@@ -68,6 +68,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     const draggingSkillData = ref(null)
 
     // 选中与多选
+    const selectedConnectionId = ref(null)
     const selectedActionId = ref(null)
     const selectedLibrarySkillId = ref(null)
     const multiSelectedIds = ref(new Set())
@@ -275,6 +276,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     function selectTrack(trackId) {
         activeTrackId.value = trackId
         selectedLibrarySkillId.value = null
+        selectedConnectionId.value = null
         cancelLinking()
         clearSelection()
     }
@@ -282,14 +284,34 @@ export const useTimelineStore = defineStore('timeline', () => {
     function selectLibrarySkill(skillId) {
         selectedActionId.value = null;
         multiSelectedIds.value.clear();
+        selectedConnectionId.value = null
         selectedLibrarySkillId.value = (selectedLibrarySkillId.value === skillId) ? null : skillId
     }
 
     function selectAction(instanceId) {
         selectedLibrarySkillId.value = null
+        selectedConnectionId.value = null
+        selectedAnomalyIndex.value = null
         selectedActionId.value = (instanceId === selectedActionId.value) ? null : instanceId
         multiSelectedIds.value.clear()
         if (selectedActionId.value) { multiSelectedIds.value.add(selectedActionId.value) }
+    }
+
+    function selectAnomaly(instanceId, rowIndex, colIndex) {
+        selectedLibrarySkillId.value = null
+        selectedConnectionId.value = null
+        selectedActionId.value = instanceId
+        multiSelectedIds.value.clear()
+        multiSelectedIds.value.add(instanceId)
+        selectedAnomalyIndex.value = { rowIndex, colIndex }
+    }
+
+    function selectConnection(connId) {
+        selectedLibrarySkillId.value = null
+        selectedActionId.value = null
+        multiSelectedIds.value.clear()
+        // 切换选中状态：如果已选中则取消，否则选中
+        selectedConnectionId.value = (selectedConnectionId.value === connId) ? null : connId
     }
 
     function setMultiSelection(idsArray) {
@@ -299,6 +321,8 @@ export const useTimelineStore = defineStore('timeline', () => {
 
     function clearSelection() {
         selectedActionId.value = null
+        selectedConnectionId.value = null
+        selectedAnomalyIndex.value = null
         multiSelectedIds.value.clear()
     }
 
@@ -331,18 +355,33 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
 
     function removeCurrentSelection() {
+        let actionCount = 0
+        let connCount = 0
+
         const targets = new Set(multiSelectedIds.value)
         if (selectedActionId.value) targets.add(selectedActionId.value)
-        if (targets.size === 0) return 0
 
-        tracks.value.forEach(track => {
-            if (!track.actions || track.actions.length === 0) return
-            track.actions = track.actions.filter(a => !targets.has(a.instanceId))
-        })
-        connections.value = connections.value.filter(c => !targets.has(c.from) && !targets.has(c.to))
-        clearSelection()
-        commitState()
-        return targets.size
+        if (targets.size > 0) {
+            tracks.value.forEach(track => {
+                if (!track.actions || track.actions.length === 0) return
+                const initialLen = track.actions.length
+                track.actions = track.actions.filter(a => !targets.has(a.instanceId))
+                if (track.actions.length < initialLen) actionCount += (initialLen - track.actions.length)
+            })
+            connections.value = connections.value.filter(c => !targets.has(c.from) && !targets.has(c.to))
+        }
+        if (selectedConnectionId.value) {
+            const initialLen = connections.value.length
+            connections.value = connections.value.filter(c => c.id !== selectedConnectionId.value)
+            if (connections.value.length < initialLen) connCount++
+            selectedConnectionId.value = null
+        }
+
+        if (actionCount + connCount > 0) {
+            clearSelection()
+            commitState()
+        }
+        return { actionCount, connCount, total: actionCount + connCount }
     }
 
     function pasteSelection() {
@@ -374,11 +413,41 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
 
     function confirmLinking(targetId, targetEffectIndex = null) {
+        // 基础校验
         if (!isLinking.value || !linkingSourceId.value) return cancelLinking();
-        if (linkingSourceId.value === targetId) { cancelLinking(); return; }
-        const exists = connections.value.some(c => c.from === linkingSourceId.value && c.to === targetId && c.fromEffectIndex === linkingEffectIndex.value && c.toEffectIndex === targetEffectIndex)
+
+        if (linkingSourceId.value === targetId) {
+            const isSourceEffect = linkingEffectIndex.value !== null;
+            const isTargetEffect = targetEffectIndex !== null;
+
+            // 情况A: 只要有一方不是 Effect (即动作本体)，则禁止自连
+            // (防止 动作->动作, 动作->自身Effect, 自身Effect->动作)
+            if (!isSourceEffect || !isTargetEffect) {
+                cancelLinking();
+                return;
+            }
+            // 情况B: 都是 Effect，但由同一个图标连向同一个图标 (死循环)，禁止
+            if (linkingEffectIndex.value === targetEffectIndex) {
+                cancelLinking();
+                return;
+            }
+            // 情况C: 同一个动作下的不同图标 (Effect A -> Effect B)，允许通行！
+        }
+        // 查重逻辑 (防止重复建立相同的连线)
+        const exists = connections.value.some(c =>
+            c.from === linkingSourceId.value &&
+            c.to === targetId &&
+            c.fromEffectIndex === linkingEffectIndex.value &&
+            c.toEffectIndex === targetEffectIndex
+        )
         if (!exists) {
-            connections.value.push({ id: `conn_${uid()}`, from: linkingSourceId.value, to: targetId, fromEffectIndex: linkingEffectIndex.value, toEffectIndex: targetEffectIndex })
+            connections.value.push({
+                id: `conn_${uid()}`,
+                from: linkingSourceId.value,
+                to: targetId,
+                fromEffectIndex: linkingEffectIndex.value,
+                toEffectIndex: targetEffectIndex
+            })
             commitState()
         }
         cancelLinking()
@@ -591,7 +660,6 @@ export const useTimelineStore = defineStore('timeline', () => {
                                 });
                             }
                             // 累加时间：当前效果持续时间作为间隔
-                            // 这里假设 duration 就是两段伤害之间的间隔
                             currentTimeOffset += (effect.duration || 0);
                         });
                     });
@@ -858,6 +926,6 @@ export const useTimelineStore = defineStore('timeline', () => {
         addSkillToTrack, setDraggingSkill, setDragOffset, setScrollLeft, calculateGlobalSpData, calculateGaugeData, calculateGlobalStaggerData, updateTrackInitialGauge, updateTrackMaxGauge,
         startLinking, confirmLinking, cancelLinking, removeConnection, getColor, toggleCursorGuide, toggleBoxSelectMode, setCursorTime, toggleSnapStep, nudgeSelection,
         setMultiSelection, clearSelection, copySelection, pasteSelection, removeCurrentSelection, undo, redo, commitState,
-        removeAnomaly, initAutoSave, loadFromBrowser, resetProject
+        removeAnomaly, initAutoSave, loadFromBrowser, resetProject, selectedConnectionId, selectConnection, selectedAnomalyIndex,  selectAnomaly
     }
 })

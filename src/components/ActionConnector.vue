@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   connection: { type: Object, required: true },
@@ -11,27 +12,36 @@ const props = defineProps({
 const store = useTimelineStore()
 const gradientId = computed(() => `grad-${props.connection.id}`)
 
+// 判断当前连线是否被左键选中
+const isSelected = computed(() => store.selectedConnectionId === props.connection.id)
+
+function onRightClick() {
+  store.removeConnection(props.connection.id)
+  ElMessage.success({ message: '已删除 1 条连线', duration: 1000 })
+}
+
+function onSelectClick(evt) {
+  evt.stopPropagation()
+  store.selectConnection(props.connection.id)
+}
+
 // ===================================================================================
-// 1. 辅助函数
+// 辅助函数 (颜色与坐标计算)
 // ===================================================================================
 
 const resolveColor = (info, effectIndex) => {
   if (!info || !info.action) return store.getColor('default')
   const { action, trackIndex } = info
 
-  // 1. 连接到异常状态 (Effect)
   if (effectIndex !== undefined && effectIndex !== null) {
     const raw = action.physicalAnomaly || []
     if (raw.length === 0) return store.getColor('default')
-
     const flatList = Array.isArray(raw[0]) ? raw.flat() : raw
-
     const effect = flatList[effectIndex]
     if (effect && effect.type) return store.getColor(effect.type)
     return store.getColor('default')
   }
 
-  // 2. 连接到动作本身
   if (action.type === 'link') return store.getColor('link')
   if (action.type === 'execution') return store.getColor('execution')
   if (action.type === 'attack') return store.getColor('physical')
@@ -75,7 +85,7 @@ const getTrackCenterY = (trackIndex) => {
 }
 
 // ===================================================================================
-// 2. 核心计算
+// 核心计算
 // ===================================================================================
 
 const calculatePoint = (nodeId, effectIndex, isSource) => {
@@ -104,7 +114,6 @@ const calculatePoint = (nodeId, effectIndex, isSource) => {
   const x = timePoint * store.timeBlockWidth
   let y = getTrackCenterY(info.trackIndex)
 
-  // 多线分散
   if (!isSource && effectIndex == null && info.action.triggerWindow <= 0) {
     const incoming = store.getIncomingConnections(nodeId)
     const generalIncoming = incoming.filter(c => c.toEffectIndex == null)
@@ -122,31 +131,62 @@ const calculatePoint = (nodeId, effectIndex, isSource) => {
 const pathInfo = computed(() => {
   const _trigger = props.renderKey
   const conn = props.connection
+
   const fromInfo = store.getActionPositionInfo(conn.from)
   const toInfo = store.getActionPositionInfo(conn.to)
   if (!fromInfo || !toInfo) return null
+
   const start = calculatePoint(conn.from, conn.fromEffectIndex, true)
   const end = calculatePoint(conn.to, conn.toEffectIndex, false)
   if (!start || !end) return null
+
   const colorStart = resolveColor(fromInfo, conn.fromEffectIndex)
   const colorEnd = resolveColor(toInfo, conn.toEffectIndex)
+
   const dx = Math.abs(end.x - start.x)
   const controlDist = Math.max(50, Math.min(dx * 0.6, 200))
   const d = `M ${start.x} ${start.y} C ${start.x + controlDist} ${start.y}, ${end.x - controlDist} ${end.y}, ${end.x} ${end.y}`
-  return { d, startPoint: { x: start.x, y: start.y }, endPoint: { x: end.x, y: end.y }, colors: { start: colorStart, end: colorEnd } }
+
+  return {
+    d,
+    startPoint: { x: start.x, y: start.y },
+    endPoint: { x: end.x, y: end.y },
+    colors: { start: colorStart, end: colorEnd }
+  }
 })
 </script>
 
 <template>
-  <g v-if="pathInfo">
+  <g v-if="pathInfo"
+     class="connector-group"
+     :class="{ 'is-selected': isSelected }"
+     @click="onSelectClick"
+     @contextmenu.prevent="onRightClick"
+  >
     <defs>
       <linearGradient :id="gradientId" gradientUnits="userSpaceOnUse" :x1="pathInfo.startPoint.x" :y1="pathInfo.startPoint.y" :x2="pathInfo.endPoint.x" :y2="pathInfo.endPoint.y">
         <stop offset="0%" :stop-color="pathInfo.colors.start" stop-opacity="0.8"/>
         <stop offset="100%" :stop-color="pathInfo.colors.end" stop-opacity="1"/>
       </linearGradient>
     </defs>
-    <path :d="pathInfo.d" fill="none" :stroke="pathInfo.colors.end" stroke-width="6" stroke-opacity="0.05" stroke-linecap="round" class="hover-zone"/>
-    <path :d="pathInfo.d" fill="none" :stroke="`url(#${gradientId})`" stroke-width="2" stroke-linecap="round" class="main-path"/>
+
+    <path :d="pathInfo.d"
+          fill="none"
+          :stroke="pathInfo.colors.end"
+          stroke-width="12"
+          class="hover-zone"
+    >
+      <title>左键选中+Delete / 右键 删除</title>
+    </path>
+
+    <path :d="pathInfo.d"
+          fill="none"
+          :stroke="isSelected ? '#ffffff' : `url(#${gradientId})`"
+          stroke-width="2"
+          stroke-linecap="round"
+          class="main-path"
+    />
+
     <circle r="2">
       <animateMotion :path="pathInfo.d" dur="1.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.4 0 0.2 1"/>
       <animate attributeName="fill" :values="`${pathInfo.colors.start};${pathInfo.colors.end}`" dur="1.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;1" keySplines="0.4 0 0.2 1"/>
@@ -155,8 +195,10 @@ const pathInfo = computed(() => {
 </template>
 
 <style scoped>
-.main-path { pointer-events: none; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5)); stroke-dasharray: 10, 5; animation: dash-flow 30s linear infinite; }
-.hover-zone { pointer-events: stroke; transition: stroke-opacity 0.2s; cursor: pointer; }
-.hover-zone:hover { stroke-opacity: 0.3; }
-@keyframes dash-flow { to { stroke-dashoffset: -1000; } }
+.connector-group { cursor: pointer; }
+.connector-group.is-selected .main-path { stroke-width: 3; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)); z-index: 999; }
+.hover-zone { pointer-events: stroke; transition: stroke-opacity 0.2s; stroke-opacity: 0; }
+.connector-group:hover .hover-zone { stroke-opacity: 0.4; }
+.main-path { pointer-events: none; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5)); stroke-dasharray: 10, 5; animation: dash-flow 30s linear infinite; transition: stroke 0.2s; }
+@keyframes dash-flow {  to { stroke-dashoffset: -1000; } }
 </style>

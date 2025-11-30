@@ -500,11 +500,31 @@ function onBackgroundClick(event) {
 function handleKeyDown(event) {
   const target = event.target
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
-  const hasSelection = store.selectedActionId || store.multiSelectedIds.size > 0
+
+  const hasSelection = store.selectedActionId || store.multiSelectedIds.size > 0 || store.selectedConnectionId
+
   if (!hasSelection) return
-  if (event.key === 'Delete') { event.preventDefault(); const count = store.removeCurrentSelection(); if (count > 0) ElMessage.success(`已删除 ${count} 个动作`) }
-  if (event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') { event.preventDefault(); store.nudgeSelection(-0.1) }
-  if (event.key === 'd' || event.key === 'D' || event.key === 'ArrowRight') { event.preventDefault(); store.nudgeSelection(0.1) }
+
+  if (event.key === 'Delete' || event.key === 'Backspace') {
+    event.preventDefault();
+    const result = store.removeCurrentSelection(); // 现在返回对象 { actionCount, connCount, total }
+    if (result.total > 0) {
+      let msg = '已删除 '
+      if (result.actionCount > 0 && result.connCount > 0) {
+        msg += `${result.actionCount} 个动作和 ${result.connCount} 条连线`
+      } else if (result.actionCount > 0) {
+        msg += `${result.actionCount} 个动作`
+      } else {
+        msg += `${result.connCount} 条连线`
+      }
+      ElMessage.success({ message: msg, duration: 1000 })
+    }
+  }
+  // 左右微调只对动作生效，不对连线生效
+  if (store.selectedActionId || store.multiSelectedIds.size > 0) {
+    if (event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') { event.preventDefault(); store.nudgeSelection(-0.1) }
+    if (event.key === 'd' || event.key === 'D' || event.key === 'ArrowRight') { event.preventDefault(); store.nudgeSelection(0.1) }
+  }
 }
 
 watch(() => store.timeBlockWidth, () => { nextTick(() => { forceSvgUpdate(); updateScrollbarHeight() }) })
