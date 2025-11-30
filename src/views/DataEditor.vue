@@ -634,7 +634,7 @@ function setRowDelay(char, skillType, rowIndex, val) {
 
                 <div class="form-group"><label>持续时间 (s)</label><input type="number" step="0.1" v-model.number="selectedChar[`${type}_duration`]"></div>
 
-                <div class="form-group" v-if="type !== 'link'"><label>技力回复</label><input type="number" v-model.number="selectedChar[`${type}_spGain`]"></div>
+                <div class="form-group"><label>技力回复</label><input type="number" v-model.number="selectedChar[`${type}_spGain`]"></div>
 
                 <div class="form-group" v-if="type === 'attack' || type === 'skill' || type === 'link' || type === 'ultimate'"><label>失衡值</label><input type="number" v-model.number="selectedChar[`${type}_stagger`]"></div>
 
