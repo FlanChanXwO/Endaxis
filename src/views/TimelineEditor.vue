@@ -15,7 +15,7 @@ const store = useTimelineStore()
 
 // === 关于弹窗逻辑 ===
 const aboutDialogVisible = ref(false)
-const CURRENT_NOTICE_VERSION = '2025-11-30-update'
+const CURRENT_NOTICE_VERSION = '2025-12-3-update'
 
 onMounted(() => {
   const lastSeenVersion = localStorage.getItem('endaxis_notice_version')
@@ -258,7 +258,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
           <h3>项目概况</h3>
           <p>
             目前数值填好的干员只有：管理员，骏卫，黎风，陈千语，大潘。<br>
-            甚至不一定填好了，如果有玩家有干员的详细数据（释放技能所需时间，战技回复的充能等）都可以联系视频置顶评论的那个人（我）
+            甚至不一定填好了，如果有玩家有干员的详细数据（释放技能所需时间，战技回复的充能等）都可以联系视频置顶评论的那个人（我）<br>
+            重构后数据基本都不能用了，得等几天填好。
           </p>
         </div>
 

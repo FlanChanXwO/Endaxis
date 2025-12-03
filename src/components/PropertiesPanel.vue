@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import draggable from 'vuedraggable'
 import CustomNumberInput from './CustomNumberInput.vue'
@@ -38,42 +38,83 @@ const GROUP_DEFINITIONS = [
 
 const isTicksExpanded = ref(false)
 const isBarsExpanded = ref(false)
+const localSelectedAnomalyId = ref(null) // 用于库模式下的本地选中状态
 
-const selectedLibrarySkill = computed(() => {
-  if (!store.selectedLibrarySkillId) return null
-  return store.activeSkillLibrary.find(s => s.id === store.selectedLibrarySkillId)
+// 监听选中切换，重置本地状态
+watch(() => store.selectedLibrarySkillId, () => {
+  localSelectedAnomalyId.value = null
 })
 
-const selectedAction = computed(() => {
-  if (!store.selectedActionId) return null
-  for (const track of store.tracks) {
-    const found = track.actions.find(a => a.instanceId === store.selectedActionId)
-    if (found) return found
+const targetData = computed(() => {
+  if (store.selectedActionId) {
+    // 寻找实例
+    for (const track of store.tracks) {
+      const found = track.actions.find(a => a.instanceId === store.selectedActionId)
+      if (found) return found
+    }
+  }
+  if (store.selectedLibrarySkillId) {
+    // 寻找库模板
+    return store.activeSkillLibrary.find(s => s.id === store.selectedLibrarySkillId)
   }
   return null
 })
 
-const currentCharacter = computed(() => {
-  if (!selectedAction.value) return null
-  const track = store.tracks.find(t => t.actions.some(a => a.instanceId === store.selectedActionId))
-  if (!track) return null
-  return store.characterRoster.find(c => c.id === track.id)
+const isLibraryMode = computed(() => {
+  return !!store.selectedLibrarySkillId && !store.selectedActionId
 })
 
-const currentSkillType = computed(() => {
-  if (selectedLibrarySkill.value) return selectedLibrarySkill.value.type
-  if (selectedAction.value) return selectedAction.value.type
-  return 'unknown'
+const currentCharacter = computed(() => {
+  if (!targetData.value) return null
+
+  if (!isLibraryMode.value) {
+    const track = store.tracks.find(t => t.actions.some(a => a.instanceId === store.selectedActionId))
+    if (!track) return null
+    return store.characterRoster.find(c => c.id === track.id)
+  }
+
+  if (store.activeTrackId) {
+    return store.characterRoster.find(c => c.id === store.activeTrackId)
+  }
+  return null
 })
+
+const currentSkillType = computed(() => targetData.value?.type || 'unknown')
+
+// === 统一更新函数 ===
+function commitUpdate(payload) {
+  if (!targetData.value) return
+
+  if (isLibraryMode.value) {
+    // 更新库技能 (Character Overrides)
+    store.updateLibrarySkill(targetData.value.id, payload)
+  } else {
+    // 更新时间轴实例
+    store.updateAction(store.selectedActionId, payload)
+  }
+}
+
+// === 异常状态相关 ===
 
 const anomalyRows = computed({
-  get: () => selectedAction.value?.physicalAnomaly || [],
-  set: (val) => store.updateAction(store.selectedActionId, { physicalAnomaly: val })
+  get: () => targetData.value?.physicalAnomaly || [],
+  set: (val) => commitUpdate({ physicalAnomaly: val })
+})
+
+const activeAnomalyId = computed(() => {
+  return isLibraryMode.value ? localSelectedAnomalyId.value : store.selectedAnomalyId
 })
 
 const currentSelectedCoords = computed(() => {
-  if (!store.selectedActionId || !store.selectedAnomalyId) return null
-  return store.getAnomalyIndexById(store.selectedActionId, store.selectedAnomalyId)
+  if (!activeAnomalyId.value || !targetData.value) return null
+
+  const rows = targetData.value.physicalAnomaly || []
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r]
+    const c = row.findIndex(e => e._id === activeAnomalyId.value)
+    if (c !== -1) return { rowIndex: r, colIndex: c }
+  }
+  return null
 })
 
 const editingEffectData = computed(() => {
@@ -107,10 +148,18 @@ function toggleEditEffect(r, c) {
   if (!effect) return
   if (!effect._id) effect._id = Math.random().toString(36).substring(2, 9)
 
-  if (store.selectedAnomalyId === effect._id) {
-    store.setSelectedAnomalyId(null)
+  const targetId = effect._id
+
+  if (isLibraryMode.value) {
+    // 库模式：使用本地状态
+    localSelectedAnomalyId.value = (localSelectedAnomalyId.value === targetId) ? null : targetId
   } else {
-    store.selectAnomaly(store.selectedActionId, r, c)
+    // 实例模式：使用 Store 状态
+    if (store.selectedAnomalyId === targetId) {
+      store.setSelectedAnomalyId(null)
+    } else {
+      store.selectAnomaly(store.selectedActionId, r, c)
+    }
   }
 }
 
@@ -121,86 +170,110 @@ function updateEffectProp(key, value) {
   const rows = JSON.parse(JSON.stringify(anomalyRows.value))
   if (rows[rowIndex] && rows[rowIndex][colIndex]) {
     rows[rowIndex][colIndex][key] = value
-    store.updateAction(store.selectedActionId, { physicalAnomaly: rows })
+    commitUpdate({ physicalAnomaly: rows })
   }
 }
 
 function addRow() {
-  store.addAnomalyRow(selectedAction.value, currentSkillType.value)
-  const newRows = selectedAction.value.physicalAnomaly
-  if (newRows && newRows.length > 0) {
-    const lastRowIndex = newRows.length - 1
-    const newEffect = newRows[lastRowIndex][0]
-    if (newEffect) store.setSelectedAnomalyId(newEffect._id)
+  const rows = JSON.parse(JSON.stringify(anomalyRows.value))
+  const allowed = targetData.value.allowedTypes || []
+  const defaultType = allowed.length > 0 ? allowed[0] : 'default'
+
+  rows.push([{
+    _id: Math.random().toString(36).substring(2, 9),
+    type: defaultType, stacks: 1, duration: 0, offset: 0, sp: 0, stagger: 0
+  }])
+
+  commitUpdate({ physicalAnomaly: rows })
+
+  const lastRowIndex = rows.length - 1
+  const newEffect = rows[lastRowIndex][0]
+  if (newEffect) {
+    if (isLibraryMode.value) localSelectedAnomalyId.value = newEffect._id
+    else store.setSelectedAnomalyId(newEffect._id)
   }
 }
 
 function addEffectToRow(rowIndex) {
-  store.addAnomalyToRow(selectedAction.value, currentSkillType.value, rowIndex)
-  const row = selectedAction.value.physicalAnomaly[rowIndex]
-  if (row) {
-    const newEffect = row[row.length - 1]
-    if (newEffect) store.setSelectedAnomalyId(newEffect._id)
+  const rows = JSON.parse(JSON.stringify(anomalyRows.value))
+  const allowed = targetData.value.allowedTypes || []
+  const defaultType = allowed.length > 0 ? allowed[0] : 'default'
+
+  if (rows[rowIndex]) {
+    const newEffect = {
+      _id: Math.random().toString(36).substring(2, 9),
+      type: defaultType, stacks: 1, duration: 0, offset: 0, sp: 0, stagger: 0
+    }
+    rows[rowIndex].push(newEffect)
+    commitUpdate({ physicalAnomaly: rows })
+
+    if (isLibraryMode.value) localSelectedAnomalyId.value = newEffect._id
+    else store.setSelectedAnomalyId(newEffect._id)
   }
 }
 
 function removeEffect(r, c) {
-  store.removeAnomaly(store.selectedActionId, r, c)
-  store.setSelectedAnomalyId(null)
+  const rows = JSON.parse(JSON.stringify(anomalyRows.value))
+  if (rows[r]) {
+    rows[r].splice(c, 1)
+    if (rows[r].length === 0) rows.splice(r, 1)
+    commitUpdate({ physicalAnomaly: rows })
+
+    if (isLibraryMode.value) localSelectedAnomalyId.value = null
+    else store.setSelectedAnomalyId(null)
+  }
 }
 
 function updateActionProp(key, value) {
-  if (!selectedAction.value) return
-  store.updateAction(store.selectedActionId, { [key]: value })
+  commitUpdate({ [key]: value })
 }
 
 function updateActionGaugeWithLink(value) {
-  if (!selectedAction.value) return
-  store.updateAction(store.selectedActionId, { gaugeGain: value, teamGaugeGain: value * 0.5 })
+  commitUpdate({ gaugeGain: value, teamGaugeGain: value * 0.5 })
 }
 
 function addDamageTick() {
-  const currentTicks = selectedAction.value.damageTicks ? [...selectedAction.value.damageTicks] : []
+  const currentTicks = targetData.value.damageTicks ? [...targetData.value.damageTicks] : []
   currentTicks.push({ offset: 0, stagger: 0, sp: 0 })
   currentTicks.sort((a, b) => a.offset - b.offset)
-  store.updateAction(store.selectedActionId, { damageTicks: currentTicks })
+  commitUpdate({ damageTicks: currentTicks })
   isTicksExpanded.value = true
 }
 
 function removeDamageTick(index) {
-  const currentTicks = [...(selectedAction.value.damageTicks || [])]
+  const currentTicks = [...(targetData.value.damageTicks || [])]
   currentTicks.splice(index, 1)
-  store.updateAction(store.selectedActionId, { damageTicks: currentTicks })
+  commitUpdate({ damageTicks: currentTicks })
 }
 
 function updateDamageTick(index, key, value) {
-  const currentTicks = [...(selectedAction.value.damageTicks || [])]
+  const currentTicks = [...(targetData.value.damageTicks || [])]
   currentTicks[index] = { ...currentTicks[index], [key]: value }
   if (key === 'offset') {
     currentTicks.sort((a, b) => a.offset - b.offset)
   }
-  store.updateAction(store.selectedActionId, { damageTicks: currentTicks })
+  commitUpdate({ damageTicks: currentTicks })
 }
 
-const customBarsList = computed(() => selectedAction.value?.customBars || [])
+const customBarsList = computed(() => targetData.value?.customBars || [])
 
 function addCustomBar() {
   const newList = [...customBarsList.value]
   newList.push({ text: '', duration: 1, offset: 0 })
-  store.updateAction(store.selectedActionId, { customBars: newList })
+  commitUpdate({ customBars: newList })
   isBarsExpanded.value = true
 }
 
 function removeCustomBar(index) {
   const newList = [...customBarsList.value]
   newList.splice(index, 1)
-  store.updateAction(store.selectedActionId, { customBars: newList })
+  commitUpdate({ customBars: newList })
 }
 
 function updateCustomBarItem(index, key, value) {
   const newList = [...customBarsList.value]
   newList[index] = { ...newList[index], [key]: value }
-  store.updateAction(store.selectedActionId, { customBars: newList })
+  commitUpdate({ customBars: newList })
 }
 
 // ===================================================================================
@@ -209,7 +282,7 @@ function updateCustomBarItem(index, key, value) {
 
 const iconOptions = computed(() => {
   const allGlobalKeys = Object.keys(store.iconDatabase)
-  const allowed = selectedAction.value?.allowedTypes
+  const allowed = targetData.value?.allowedTypes
   const availableKeys = (allowed && allowed.length > 0)
       ? allGlobalKeys.filter(key => allowed.includes(key) || key === 'default')
       : allGlobalKeys
@@ -254,30 +327,17 @@ const iconOptions = computed(() => {
   return groups
 })
 
-function getIconPath(type, actionContext = null) {
+function getIconPath(type) {
   if (store.iconDatabase[type]) return store.iconDatabase[type]
-
-  if (actionContext) {
-    const track = store.tracks.find(t => t.actions.some(a => a.instanceId === actionContext.instanceId))
-    if (track) {
-      const charInfo = store.characterRoster.find(c => c.id === track.id)
-      if (charInfo?.exclusive_buffs) {
-        const exclusive = charInfo.exclusive_buffs.find(b => b.key === type)
-        if (exclusive?.path) return exclusive.path
-      }
-    }
-  }
-
   if (currentCharacter.value && currentCharacter.value.exclusive_buffs) {
     const exclusive = currentCharacter.value.exclusive_buffs.find(b => b.key === type)
     if (exclusive) return exclusive.path
   }
-
   return store.iconDatabase['default'] || ''
 }
 
 const relevantConnections = computed(() => {
-  if (!store.selectedActionId) return []
+  if (isLibraryMode.value || !store.selectedActionId) return []
 
   return store.connections
       .filter(c => c.from === store.selectedActionId || c.to === store.selectedActionId)
@@ -297,17 +357,17 @@ const relevantConnections = computed(() => {
         }
 
         let myIconPath = null
-        if (selectedAction.value) {
+        if (targetData.value) {
           const myEffectId = isOutgoing ? conn.fromEffectId : conn.toEffectId
           let realIndex = -1
-          if (myEffectId) realIndex = store.findEffectIndexById(selectedAction.value, myEffectId)
+          if (myEffectId) realIndex = store.findEffectIndexById(targetData.value, myEffectId)
           if (realIndex === -1 && (isOutgoing ? conn.fromEffectIndex : conn.toEffectIndex) !== null) {
             realIndex = isOutgoing ? conn.fromEffectIndex : conn.toEffectIndex
           }
           if (realIndex !== -1) {
-            const allEffects = (selectedAction.value.physicalAnomaly || []).flat()
+            const allEffects = (targetData.value.physicalAnomaly || []).flat()
             const effect = allEffects[realIndex]
-            if (effect) myIconPath = getIconPath(effect.type, selectedAction.value)
+            if (effect) myIconPath = getIconPath(effect.type)
           }
         }
 
@@ -322,7 +382,7 @@ const relevantConnections = computed(() => {
           if (realIndex !== -1) {
             const allEffects = (otherAction.physicalAnomaly || []).flat()
             const effect = allEffects[realIndex]
-            if (effect) otherIconPath = getIconPath(effect.type, otherAction)
+            if (effect) otherIconPath = getIconPath(effect.type)
           }
         }
 
@@ -340,10 +400,13 @@ const relevantConnections = computed(() => {
 </script>
 
 <template>
-  <div v-if="selectedAction" class="properties-panel">
+  <div v-if="targetData" class="properties-panel">
     <div class="panel-header">
-      <h3 class="panel-title">{{ selectedAction.name }}</h3>
-      <div class="type-badge">{{ selectedAction.type }}</div>
+      <h3 class="panel-title">
+        {{ targetData.name }}
+        <span v-if="isLibraryMode" class="mode-badge">此处更改会全局生效</span>
+      </h3>
+      <div class="type-badge">{{ targetData.type }}</div>
     </div>
 
     <div class="section-container">
@@ -351,37 +414,37 @@ const relevantConnections = computed(() => {
       <div class="attribute-grid">
         <div class="form-group compact">
           <label>持续时间(s)</label>
-          <CustomNumberInput :model-value="selectedAction.duration" @update:model-value="val => updateActionProp('duration', val)" :step="0.1" :min="0" :activeColor="HIGHLIGHT_COLORS.default" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.duration" @update:model-value="val => updateActionProp('duration', val)" :step="0.1" :min="0" :activeColor="HIGHLIGHT_COLORS.default" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="currentSkillType === 'link'">
           <label>冷却时间(s)</label>
-          <CustomNumberInput :model-value="selectedAction.cooldown" @update:model-value="val => updateActionProp('cooldown', val)" :min="0" :activeColor="HIGHLIGHT_COLORS.default" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.cooldown" @update:model-value="val => updateActionProp('cooldown', val)" :min="0" :activeColor="HIGHLIGHT_COLORS.default" text-align="center"/>
         </div>
 
-        <div class="form-group compact" v-if="currentSkillType === 'link'">
+        <div class="form-group compact" v-if="currentSkillType === 'link' && !isLibraryMode">
           <label>触发窗口(s)</label>
-          <CustomNumberInput :model-value="selectedAction.triggerWindow || 0" @update:model-value="val => updateActionProp('triggerWindow', val)" :step="0.1" :border-color="HIGHLIGHT_COLORS.default" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.triggerWindow || 0" @update:model-value="val => updateActionProp('triggerWindow', val)" :step="0.1" :border-color="HIGHLIGHT_COLORS.default" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="currentSkillType === 'skill'">
           <label>技力消耗</label>
-          <CustomNumberInput :model-value="selectedAction.spCost" @update:model-value="val => updateActionProp('spCost', val)" :min="0" :border-color="HIGHLIGHT_COLORS.default" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.spCost" @update:model-value="val => updateActionProp('spCost', val)" :min="0" :border-color="HIGHLIGHT_COLORS.default" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="currentSkillType === 'ultimate'">
           <label>充能消耗</label>
-          <CustomNumberInput :model-value="selectedAction.gaugeCost" @update:model-value="val => updateActionProp('gaugeCost', val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.gaugeCost" @update:model-value="val => updateActionProp('gaugeCost', val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="!['attack', 'execution'].includes(currentSkillType)">
           <label>自身充能</label>
-          <CustomNumberInput :model-value="selectedAction.gaugeGain" @update:model-value="val => updateActionGaugeWithLink(val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.gaugeGain" @update:model-value="val => updateActionGaugeWithLink(val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="currentSkillType === 'skill'">
           <label>队友充能</label>
-          <CustomNumberInput :model-value="selectedAction.teamGaugeGain" @update:model-value="val => updateActionProp('teamGaugeGain', val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.teamGaugeGain" @update:model-value="val => updateActionProp('teamGaugeGain', val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
         </div>
       </div>
     </div>
@@ -389,7 +452,7 @@ const relevantConnections = computed(() => {
     <div class="section-container border-red">
       <div class="section-header clickable" @click="isTicksExpanded = !isTicksExpanded">
         <div class="header-left">
-          <label style="color: #ff7875;">伤害判定点 ({{ (selectedAction.damageTicks || []).length }})</label>
+          <label style="color: #ff7875;">伤害判定点 ({{ (targetData.damageTicks || []).length }})</label>
         </div>
         <div class="header-right">
           <button class="icon-btn-add" @click.stop="addDamageTick">+</button>
@@ -398,8 +461,8 @@ const relevantConnections = computed(() => {
       </div>
 
       <div v-if="isTicksExpanded" class="section-content">
-        <div v-if="!selectedAction.damageTicks || selectedAction.damageTicks.length === 0" class="empty-hint">暂无判定点</div>
-        <div v-for="(tick, index) in (selectedAction.damageTicks || [])" :key="index" class="tick-item">
+        <div v-if="!targetData.damageTicks || targetData.damageTicks.length === 0" class="empty-hint">暂无判定点</div>
+        <div v-for="(tick, index) in (targetData.damageTicks || [])" :key="index" class="tick-item">
           <div class="tick-header">
             <span class="tick-idx">HIT {{ index + 1 }}</span>
             <button class="remove-btn" @click="removeDamageTick(index)">×</button>
@@ -461,7 +524,7 @@ const relevantConnections = computed(() => {
             <div class="anomaly-editor-row">
               <div class="row-handle">⋮</div>
               <draggable :list="row" item-key="_id" class="row-items-list" :group="{ name: 'effects' }" :animation="150"
-                         @change="() => store.updateAction(store.selectedActionId, { physicalAnomaly: anomalyRows })">
+                         @change="() => commitUpdate({ physicalAnomaly: anomalyRows })">
                 <template #item="{ element: effect, index: colIndex }">
                   <div class="icon-wrapper" :class="{ 'is-editing': isEditing(rowIndex, colIndex) }"
                        @click="toggleEditEffect(rowIndex, colIndex)">
@@ -481,7 +544,7 @@ const relevantConnections = computed(() => {
         <div class="editor-arrow"></div>
         <div class="editor-header-mini">
           <span>编辑 R{{ currentSelectedCoords.rowIndex + 1 }} : C{{ currentSelectedCoords.colIndex + 1 }}</span>
-          <button class="close-btn" @click="store.setSelectedAnomalyId(null)">关闭</button>
+          <button class="close-btn" @click="isLibraryMode ? (localSelectedAnomalyId = null) : store.setSelectedAnomalyId(null)">关闭</button>
         </div>
 
         <div class="editor-grid">
@@ -513,7 +576,7 @@ const relevantConnections = computed(() => {
         </div>
 
         <div class="editor-actions">
-          <button class="action-btn link-style" @click.stop="store.startLinking(currentFlatIndex)"
+          <button v-if="!isLibraryMode" class="action-btn link-style" @click.stop="store.startLinking(currentFlatIndex)"
                   :class="{ 'is-linking': store.isLinking && store.linkingEffectIndex === currentFlatIndex }">
             连线
           </button>
@@ -522,7 +585,7 @@ const relevantConnections = computed(() => {
       </div>
     </div>
 
-    <div class="section-container no-border" style="margin-top: 20px;">
+    <div v-if="!isLibraryMode" class="section-container no-border" style="margin-top: 20px;">
       <div class="connection-header-group">
         <div class="section-label">动作连线关系</div>
         <button class="main-link-btn" @click.stop="store.startLinking()"
@@ -596,7 +659,8 @@ const relevantConnections = computed(() => {
   border-bottom: 1px solid #444;
   padding-bottom: 10px;
 }
-.panel-title { margin: 0; color: #ffd700; font-size: 16px; font-weight: bold; }
+.panel-title { margin: 0; color: #ffd700; font-size: 16px; font-weight: bold; display: flex; flex-direction: column; gap: 4px; }
+.mode-badge { font-size: 10px; color: #888; font-weight: normal; background: #333; padding: 2px 4px; border-radius: 2px; width: fit-content; }
 .type-badge { font-size: 10px; background: #444; padding: 2px 6px; border-radius: 4px; color: #aaa; text-transform: uppercase; }
 
 /* Sections */

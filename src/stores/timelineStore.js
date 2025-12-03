@@ -205,7 +205,6 @@ export const useTimelineStore = defineStore('timeline', () => {
 
         const getAnomalies = (list) => list || []
         const getAllowed = (list) => list || []
-        const getRowDelays = (list) => list || []
 
         const createBaseSkill = (suffix, type, name) => {
             const globalId = `${activeChar.id}_${suffix}`
@@ -236,13 +235,17 @@ export const useTimelineStore = defineStore('timeline', () => {
             const specificElement = activeChar[`${suffix}_element`]
             const derivedElement = specificElement || activeChar.element || 'physical'
 
+            const finalDamageTicks = globalOverride.damageTicks || rawTicks
+            const finalAnomalies = globalOverride.physicalAnomaly || getAnomalies(activeChar[`${suffix}_anomalies`])
+            const finalAllowedTypes = getAllowed(activeChar[`${suffix}_allowed_types`])
+
             return {
                 id: globalId, type: type, name: name,
                 element: derivedElement,
                 ...merged,
-                damageTicks: rawTicks,
-                allowedTypes: getAllowed(activeChar[`${suffix}_allowed_types`]),
-                physicalAnomaly: getAnomalies(activeChar[`${suffix}_anomalies`]),
+                damageTicks: finalDamageTicks,
+                allowedTypes: finalAllowedTypes,
+                physicalAnomaly: finalAnomalies,
             }
         }
 
@@ -255,10 +258,14 @@ export const useTimelineStore = defineStore('timeline', () => {
             }
             const merged = { ...defaults, ...variant, ...globalOverride }
 
+            const finalAnomalies = globalOverride.physicalAnomaly || getAnomalies(variant.physicalAnomaly)
+            const finalDamageTicks = globalOverride.damageTicks || (variant.damageTicks ? JSON.parse(JSON.stringify(variant.damageTicks)) : [])
+
             return {
                 ...merged,
                 id: globalId,
-                physicalAnomaly: getAnomalies(variant.physicalAnomaly),
+                physicalAnomaly: finalAnomalies,
+                damageTicks: finalDamageTicks,
                 allowedTypes: getAllowed(variant.allowedTypes),
             }
         }
