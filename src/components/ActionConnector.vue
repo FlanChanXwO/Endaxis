@@ -111,10 +111,7 @@ const calculatePoint = (nodeId, effectIndex, isSource, connection = null) => {
     if (realEffectIndex !== null && realEffectIndex !== undefined) {
       const domId = `transfer-${nodeId}-${realEffectIndex}`
       const domPos = getDomPosition(domId, props.containerRef, true)
-
-      if (domPos) {
-        return { x: domPos.x, y: domPos.y }
-      }
+      if (domPos) return { x: domPos.x, y: domPos.y }
     }
     return null
   }
@@ -131,7 +128,10 @@ const calculatePoint = (nodeId, effectIndex, isSource, connection = null) => {
     if (pos) return { x: pos.x, y: pos.y }
   }
 
-  if (!isSource && info.action.triggerWindow && info.action.triggerWindow !== 0) {
+  const rawTw = info.action.triggerWindow || 0
+  const hasTriggerWindow = Math.abs(Number(rawTw)) > 0.001
+
+  if (!isSource && hasTriggerWindow) {
     const dotPos = getTriggerDotPosition(nodeId, props.containerRef)
     if (dotPos) return { x: dotPos.x, y: dotPos.y }
   }
@@ -140,16 +140,17 @@ const calculatePoint = (nodeId, effectIndex, isSource, connection = null) => {
   if (isSource) {
     timePoint = info.action.startTime + info.action.duration
   } else {
-    const window = info.action.triggerWindow || 0
-    timePoint = info.action.startTime - Math.abs(window)
+    const offset = hasTriggerWindow ? Math.abs(Number(rawTw)) : 0
+    timePoint = info.action.startTime - offset
   }
+
   const x = timePoint * store.timeBlockWidth
   let y = getTrackCenterY(info.trackIndex)
 
-  const tw = info.action.triggerWindow;
-  if (!isSource && realEffectIndex == null && (tw === undefined || tw <= 0)) {
+  if (!isSource && realEffectIndex == null && !hasTriggerWindow) {
     const incoming = store.getIncomingConnections(nodeId)
     const generalIncoming = incoming.filter(c => c.toEffectIndex == null)
+
     generalIncoming.sort((a, b) => {
       const infoA = store.getActionPositionInfo(a.from); const infoB = store.getActionPositionInfo(b.from);
       if (!infoA || !infoB) return 0;
@@ -157,6 +158,7 @@ const calculatePoint = (nodeId, effectIndex, isSource, connection = null) => {
       if (infoA.action.startTime !== infoB.action.startTime) return infoA.action.startTime - infoB.action.startTime;
       return a.id.localeCompare(b.id);
     })
+
     const myIndex = generalIncoming.findIndex(c => c.id === props.connection.id)
     if (myIndex !== -1 && generalIncoming.length > 1) {
       y += (myIndex - (generalIncoming.length - 1) / 2) * 6
@@ -208,28 +210,21 @@ const pathInfo = computed(() => {
 <style scoped>
 .connector-group {
   cursor: pointer;
-  transition: opacity 0.2s, filter 0.2s; /* 添加过渡效果让变化更平滑 */
+  transition: opacity 0.2s, filter 0.2s;
 }
-
-/* 变淡状态 */
 .connector-group.is-dimmed {
-  opacity: 0.1; /* 大幅降低不相关连线的透明度 */
+  opacity: 0.1;
   filter: grayscale(0.8);
 }
-
-/* 高亮状态 (相关连线) */
 .connector-group.is-highlighted .main-path {
-  stroke-width: 3; /* 稍微加粗 */
+  stroke-width: 3;
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
 }
-
-/* 选中状态 (保持最高优先级，但代码里样式叠加即可) */
 .connector-group.is-selected .main-path {
   stroke-width: 3;
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
   z-index: 999;
 }
-
 .hover-zone { pointer-events: stroke; transition: stroke-opacity 0.2s; stroke-opacity: 0; }
 .connector-group:hover .hover-zone { stroke-opacity: 0.4; }
 .main-path { pointer-events: none; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5)); stroke-dasharray: 10, 5; animation: dash-flow 30s linear infinite; transition: stroke 0.2s; }

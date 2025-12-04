@@ -640,6 +640,55 @@ export const useTimelineStore = defineStore('timeline', () => {
         clipboard.value = { actions: copiedActions, connections: copiedConnections, baseTime: minStartTime }
     }
 
+    function alignActionToTarget(targetInstanceId, alignMode) {
+        const sourceId = selectedActionId.value
+        if (!sourceId || sourceId === targetInstanceId) return false
+
+        const sourceInfo = getActionPositionInfo(sourceId)
+        const targetInfo = getActionPositionInfo(targetInstanceId)
+
+        if (!sourceInfo || !targetInfo) return false
+
+        const sourceAction = sourceInfo.action
+        const targetAction = targetInfo.action
+
+        const tStart = targetAction.startTime
+        const tEnd = targetAction.startTime + targetAction.duration
+
+        const sDur = sourceAction.duration
+        const sourceTw = Math.abs(Number(sourceAction.triggerWindow || 0))
+
+        let newStartTime = sourceAction.startTime
+
+        switch (alignMode) {
+            case 'RL': // [前接]
+                newStartTime = tStart - sDur
+                break
+
+            case 'LR': // [后接]
+                newStartTime = tEnd + sourceTw
+                break
+
+            case 'LL': // [左对齐]
+                newStartTime = tStart + sourceTw
+                break
+
+            case 'RR': // [右对齐]
+                newStartTime = tEnd - sDur
+                break
+        }
+
+        newStartTime = Math.round(newStartTime * 10) / 10
+
+        if (sourceAction.startTime !== newStartTime) {
+            sourceAction.startTime = newStartTime
+            tracks.value[sourceInfo.trackIndex].actions.sort((a, b) => a.startTime - b.startTime)
+            commitState()
+            return true
+        }
+        return false
+    }
+
     function calculateGlobalStaggerData() {
         const { maxStagger } = systemConstants.value;
         const events = []
@@ -791,6 +840,6 @@ export const useTimelineStore = defineStore('timeline', () => {
         startLinking, confirmLinking, cancelLinking, removeConnection, updateConnection, getColor, toggleCursorGuide, toggleBoxSelectMode, setCursorTime, toggleSnapStep, nudgeSelection,
         setMultiSelection, clearSelection, copySelection, pasteSelection, removeCurrentSelection, undo, redo, commitState,
         removeAnomaly, initAutoSave, loadFromBrowser, resetProject, selectedConnectionId, selectConnection, selectAnomaly, getAnomalyIndexById,
-        findEffectIndexById,
+        findEffectIndexById, alignActionToTarget,
     }
 })

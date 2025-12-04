@@ -10,7 +10,7 @@ import { Search } from '@element-plus/icons-vue'
 const store = useTimelineStore()
 
 // ===================================================================================
-// 1. 初始化与常量
+// 初始化与常量
 // ===================================================================================
 
 const TIME_BLOCK_WIDTH = computed(() => store.timeBlockWidth)
@@ -38,6 +38,9 @@ const dragThreshold = 5
 const wasSelectedOnPress = ref(false)
 const dragStartTimes = new Map()
 const hadAnomalySelection = ref(false)
+const isAltDown = ref(false)
+const isShiftDown = ref(false)
+const hoveredContext = ref(null)
 
 // === 边缘自动滚动相关状态 ===
 const autoScrollSpeed = ref(0)
@@ -124,7 +127,7 @@ function getRarityBaseColor(rarity) {
 }
 
 // ===================================================================================
-// 2. 核心逻辑：操作轴计算
+// 核心逻辑：操作轴计算
 // ===================================================================================
 
 const operationMarkers = computed(() => {
@@ -187,7 +190,7 @@ const operationMarkers = computed(() => {
 })
 
 // ===================================================================================
-// 3. 辅助计算属性 & 4. 事件处理
+// 辅助计算属性 & 事件处理
 // ===================================================================================
 
 const timeBlocks = computed(() => Array.from({length: store.TOTAL_DURATION}, (_, i) => i + 1))
@@ -326,8 +329,134 @@ function onBoxMouseUp() {
   boxRect.value = { left: 0, top: 0, width: 0, height: 0 }
 }
 
+// ===================================================================================
+// 对齐辅助线逻辑
+// ===================================================================================
+
+const alignGuide = ref({
+  visible: false,
+  x: 0,
+  top: 0,
+  height: 0,
+  label: '',
+  type: '', // 'snap' | 'align'
+  color: '',
+  targetRect: null
+})
+
+function updateAlignGuide(evt, action, element) {
+
+  hoveredContext.value = {
+    action,
+    element,
+    clientX: evt.clientX
+  }
+
+  if (!isAltDown.value || !store.selectedActionId || store.selectedActionId === action.instanceId) {
+    alignGuide.value.visible = false
+    return
+  }
+
+  const rect = element.getBoundingClientRect()
+  const containerRect = tracksContentRef.value.getBoundingClientRect()
+
+  // 计算相对于 scroller 内容的坐标
+  const relLeft = rect.left - containerRect.left + tracksContentRef.value.scrollLeft
+  const relTop = rect.top - containerRect.top + tracksContentRef.value.scrollTop
+
+  const clickX = evt.clientX - rect.left
+  const isClickLeft = clickX < (rect.width / 2)
+  const isShift = isShiftDown.value
+
+  let guideX = 0
+  let label = ''
+  let type = ''
+  let color = ''
+
+  // 判定模式
+  if (!isShift) {
+    // 磁吸模式 (Snap)
+    type = 'snap'
+    color = '#00e5ff'
+    if (isClickLeft) {
+      guideX = relLeft
+      label = '⏮️ 接在前方'
+    } else {
+      guideX = relLeft + rect.width
+      label = '⏭️ 接在后方'
+    }
+  } else {
+    // 对齐模式 (Align)
+    type = 'align'
+    color = '#ff00ff'
+    if (isClickLeft) {
+      guideX = relLeft
+      label = '⬅️ 左对齐'
+    } else {
+      guideX = relLeft + rect.width
+      label = '➡️ 右对齐'
+    }
+  }
+
+  alignGuide.value = {
+    visible: true,
+    x: guideX,
+    top: relTop,
+    height: rect.height,
+    label,
+    type,
+    color,
+    targetRect: { left: relLeft, top: relTop, width: rect.width, height: rect.height }
+  }
+}
+
+function hideAlignGuide() {
+  alignGuide.value.visible = false
+  hoveredContext.value = null
+}
+
+function recalcAlignGuide() {
+  if (hoveredContext.value) {
+    const { action, element, clientX } = hoveredContext.value
+    // 构造一个模拟的 evt 对象，包含 clientX 即可
+    updateAlignGuide({ clientX }, action, element)
+  }
+}
+
 function onActionMouseDown(evt, track, action) {
   evt.stopPropagation()
+
+  // 1. 处理对齐操作 (Alt + Click)
+  if (isAltDown.value) {
+    if (store.selectedActionId && store.selectedActionId !== action.instanceId) {
+      const rect = evt.currentTarget.getBoundingClientRect()
+      const clickX = evt.clientX - rect.left
+      const isClickLeft = clickX < (rect.width / 2)
+      const isShift = isShiftDown.value // 使用响应式状态
+
+      let alignMode = ''
+      let msg = ''
+
+      if (!isShift) {
+        if (isClickLeft) { alignMode = 'RL'; msg = '⏮️ 已拼接至前方' }
+        else { alignMode = 'LR'; msg = '⏭️ 已拼接至后方' }
+      } else {
+        if (isClickLeft) { alignMode = 'LL'; msg = '⬅️ 左对齐' }
+        else { alignMode = 'RR'; msg = '➡️ 右对齐' }
+      }
+
+      const success = store.alignActionToTarget(action.instanceId, alignMode)
+      if (success) {
+        ElMessage.success(msg)
+        hideAlignGuide() // 点击后立即隐藏
+      } else {
+        ElMessage.warning('位置未改变')
+      }
+    }
+    return
+  }
+
+  // 2. 正常选择与拖拽逻辑
   if (store.isLinking) return
   if (evt.button !== 0) return
 
@@ -360,22 +489,16 @@ function onActionMouseDown(evt, track, action) {
 function updateDragPosition(clientX) {
   if (!isDragStarted.value || !movingActionId.value) return
 
-  // 构造伪造事件对象，因为 calculateTimeFromEvent 依赖 evt.clientX
   const fakeEvent = { clientX: clientX }
   const newLeaderTime = calculateTimeFromEvent(fakeEvent)
-
   const leaderOriginalTime = dragStartTimes.get(movingActionId.value)
   if (leaderOriginalTime === undefined) return
 
   const timeDelta = newLeaderTime - leaderOriginalTime
 
-  // 检查移动是否合法 (所有选中的块都不能小于 0)
   let isValidMove = true
   for (const [id, originalTime] of dragStartTimes) {
-    if (originalTime + timeDelta < 0) {
-      isValidMove = false;
-      break
-    }
+    if (originalTime + timeDelta < 0) { isValidMove = false; break }
   }
 
   if (isValidMove) {
@@ -386,11 +509,7 @@ function updateDragPosition(clientX) {
         if (store.multiSelectedIds.has(a.instanceId)) {
           const original = dragStartTimes.get(a.instanceId)
           const targetTime = Math.max(0, original + timeDelta)
-          if (a.startTime !== targetTime) {
-            a.startTime = targetTime
-            trackChanged = true
-            hasChanged = true
-          }
+          if (a.startTime !== targetTime) { a.startTime = targetTime; trackChanged = true; hasChanged = true }
         }
       })
       if (trackChanged) t.actions.sort((a, b) => a.startTime - b.startTime)
@@ -429,7 +548,7 @@ function onWindowMouseMove(evt) {
     const rect = tracksContentRef.value.getBoundingClientRect()
     if (evt.clientX < rect.left + SCROLL_ZONE) {
       const ratio = 1 - (Math.max(0, evt.clientX - rect.left) / SCROLL_ZONE)
-      autoScrollSpeed.value = -Math.max(2, ratio * MAX_SCROLL_SPEED) // 最小速度2，最大15
+      autoScrollSpeed.value = -Math.max(2, ratio * MAX_SCROLL_SPEED)
     }
     else if (evt.clientX > rect.right - SCROLL_ZONE) {
       const ratio = 1 - (Math.max(0, rect.right - evt.clientX) / SCROLL_ZONE)
@@ -450,10 +569,7 @@ function onWindowMouseMove(evt) {
 
 function onWindowMouseUp(evt) {
   autoScrollSpeed.value = 0
-  if (autoScrollRaf) {
-    cancelAnimationFrame(autoScrollRaf)
-    autoScrollRaf = null
-  }
+  if (autoScrollRaf) { cancelAnimationFrame(autoScrollRaf); autoScrollRaf = null }
 
   const _wasDragging = isDragStarted.value
   try {
@@ -502,29 +618,53 @@ function handleKeyDown(event) {
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
 
   const hasSelection = store.selectedActionId || store.multiSelectedIds.size > 0 || store.selectedConnectionId
-
   if (!hasSelection) return
 
   if (event.key === 'Delete' || event.key === 'Backspace') {
     event.preventDefault();
-    const result = store.removeCurrentSelection(); // 现在返回对象 { actionCount, connCount, total }
+    const result = store.removeCurrentSelection();
     if (result.total > 0) {
       let msg = '已删除 '
-      if (result.actionCount > 0 && result.connCount > 0) {
-        msg += `${result.actionCount} 个动作和 ${result.connCount} 条连线`
-      } else if (result.actionCount > 0) {
-        msg += `${result.actionCount} 个动作`
-      } else {
-        msg += `${result.connCount} 条连线`
-      }
+      if (result.actionCount > 0 && result.connCount > 0) msg += `${result.actionCount} 个动作和 ${result.connCount} 条连线`
+      else if (result.actionCount > 0) msg += `${result.actionCount} 个动作`
+      else msg += `${result.connCount} 条连线`
       ElMessage.success({ message: msg, duration: 1000 })
     }
   }
-  // 左右微调只对动作生效，不对连线生效
   if (store.selectedActionId || store.multiSelectedIds.size > 0) {
     if (event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') { event.preventDefault(); store.nudgeSelection(-0.1) }
     if (event.key === 'd' || event.key === 'D' || event.key === 'ArrowRight') { event.preventDefault(); store.nudgeSelection(0.1) }
   }
+}
+
+function handleGlobalKeyUp(e) {
+  if (e.key === 'Alt') {
+    isAltDown.value = false;
+    hideAlignGuide()
+  }
+  if (e.key === 'Shift') {
+    isShiftDown.value = false;
+    recalcAlignGuide()
+  }
+}
+
+function resetModifierKeys() {
+  isAltDown.value = false
+  isShiftDown.value = false
+  hideAlignGuide()
+}
+
+function handleGlobalKeyDownWrapper(e) {
+  if (e.key === 'Alt') {
+    e.preventDefault()
+    isAltDown.value = true
+    recalcAlignGuide()
+  }
+  if (e.key === 'Shift') {
+    isShiftDown.value = true
+    recalcAlignGuide()
+  }
+  handleKeyDown(e)
 }
 
 watch(() => store.timeBlockWidth, () => { nextTick(() => { forceSvgUpdate(); updateScrollbarHeight() }) })
@@ -538,13 +678,21 @@ onMounted(() => {
     resizeObserver.observe(tracksContentRef.value)
     updateScrollbarHeight()
   }
-  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keydown', handleGlobalKeyDownWrapper)
+  window.addEventListener('keyup', handleGlobalKeyUp)
+  window.addEventListener('blur', resetModifierKeys)
 })
 onUnmounted(() => {
   if (tracksContentRef.value) {
     tracksContentRef.value.removeEventListener('scroll', syncRulerScroll); tracksContentRef.value.removeEventListener('scroll', syncVerticalScroll); if (resizeObserver) resizeObserver.disconnect()
   }
-  window.removeEventListener('keydown', handleKeyDown); window.removeEventListener('mousemove', onWindowMouseMove); window.removeEventListener('mouseup', onWindowMouseUp); window.removeEventListener('mousemove', onBoxMouseMove); window.removeEventListener('mouseup', onBoxMouseUp)
+  window.removeEventListener('keydown', handleGlobalKeyDownWrapper)
+  window.removeEventListener('keyup', handleGlobalKeyUp)
+  window.removeEventListener('mousemove', onWindowMouseMove)
+  window.removeEventListener('mouseup', onWindowMouseUp)
+  window.removeEventListener('mousemove', onBoxMouseMove)
+  window.removeEventListener('mouseup', onBoxMouseUp)
+  window.removeEventListener('blur', resetModifierKeys)
 })
 </script>
 
@@ -602,7 +750,6 @@ onUnmounted(() => {
           <div class="trigger-avatar-box" @click.stop="openCharacterSelector(index)" title="点击更换干员">
             <img v-if="track.id" :src="track.avatar" class="avatar-image" :alt="track.name"/>
             <div v-else class="avatar-placeholder"></div>
-
             <div class="avatar-change-hint" v-if="track.id">
               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6"></path>
@@ -612,7 +759,6 @@ onUnmounted(() => {
               </svg>
             </div>
           </div>
-
           <div class="trigger-info" @click="!track.id && openCharacterSelector(index)">
             <span class="trigger-name">{{ track.name || '请选择干员' }}</span>
           </div>
@@ -627,6 +773,32 @@ onUnmounted(() => {
       <div class="cursor-guide" :style="{ left: `${cursorX}px` }" v-show="isCursorVisible && store.showCursorGuide && !store.isBoxSelectMode">
         <div class="guide-time-label">{{ (cursorX / TIME_BLOCK_WIDTH).toFixed(1) }}s</div>
         <div class="guide-sp-label">技力: {{ currentSpValue }}</div>
+      </div>
+
+      <div v-if="alignGuide.visible" class="align-guide-layer">
+        <div class="target-highlight-box"
+             :style="{
+               left: `${alignGuide.targetRect.left}px`,
+               top: `${alignGuide.targetRect.top}px`,
+               width: `${alignGuide.targetRect.width}px`,
+               height: `${alignGuide.targetRect.height}px`,
+               color: alignGuide.color
+             }">
+        </div>
+
+        <div class="guide-line-vertical"
+             :style="{ left: `${alignGuide.x}px`, color: alignGuide.color }">
+        </div>
+
+        <div class="guide-float-label"
+             :style="{
+               left: `${alignGuide.x}px`,
+               top: `${alignGuide.top - 24}px`,
+               backgroundColor: alignGuide.color,
+               '--arrow-color': alignGuide.color
+             }">
+          {{ alignGuide.label }}
+        </div>
       </div>
 
       <div v-if="isBoxSelecting" class="selection-box-overlay" :style="{ left: `${boxRect.left}px`, top: `${boxRect.top}px`, width: `${boxRect.width}px`, height: `${boxRect.height}px` }"></div>
@@ -645,9 +817,12 @@ onUnmounted(() => {
             <GaugeOverlay v-if="track.id" :track-id="track.id"/>
             <div class="actions-container">
               <ActionItem v-for="action in track.actions" :key="action.instanceId" :action="action"
-                          @mousedown="onActionMouseDown($event, track, action)"
-                          @click.stop="onActionClick(action)"
-                          :class="{ 'is-moving': isDragStarted && movingActionId === action.instanceId }"/>
+                  @mousedown="onActionMouseDown($event, track, action)"
+                  @mousemove="updateAlignGuide($event, action, $el.querySelector(`#action-${action.instanceId}`))"
+                  @mouseleave="hideAlignGuide"
+                  @click.stop="onActionClick(action)"
+                  :class="{ 'is-moving': isDragStarted && movingActionId === action.instanceId }"
+              />
             </div>
           </div>
         </div>
@@ -657,67 +832,37 @@ onUnmounted(() => {
     <el-dialog v-model="isSelectorVisible" title="更换干员" width="600px" align-center class="char-selector-dialog" :append-to-body="true">
       <div class="selector-header">
         <div class="header-left-group">
-          <el-input
-              v-model="searchQuery"
-              placeholder="搜索干员名称..."
-              :prefix-icon="Search"
-              clearable
-              style="width: 180px"
-          />
-
+          <el-input v-model="searchQuery" placeholder="搜索干员名称..." :prefix-icon="Search" clearable style="width: 180px" />
           <button class="remove-btn" @click="removeOperator" title="清空当前轨道">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-              <path d="M3 6h18"></path>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
             卸下
           </button>
         </div>
-
         <div class="element-filters">
-          <button
-              v-for="elm in ELEMENT_FILTERS"
-              :key="elm.value"
-              class="filter-btn"
-              :class="{ active: filterElement === elm.value }"
-              :style="{ '--btn-color': elm.color }"
-              @click="filterElement = elm.value"
-          >
+          <button v-for="elm in ELEMENT_FILTERS" :key="elm.value" class="filter-btn" :class="{ active: filterElement === elm.value }" :style="{ '--btn-color': elm.color }" @click="filterElement = elm.value">
             {{ elm.label }}
           </button>
         </div>
       </div>
-
       <div class="roster-scroll-container">
         <template v-for="group in rosterByRarity" :key="group.level">
           <div class="rarity-header" :class="`header-rarity-${group.level}`">
             <span class="rarity-label" :style="{ color: getRarityBaseColor(group.level) }">{{ group.level }} ★</span>
             <div class="rarity-line" :style="{ backgroundColor: getRarityBaseColor(group.level) }"></div>
           </div>
-
           <div class="roster-grid">
-            <div v-for="char in group.list" :key="char.id" class="roster-card"
-                 :class="[
-                 { 'is-selected': store.tracks.some(t => t.id === char.id) },
-                 `rarity-${char.rarity}-style`
-               ]"
-                 @click="confirmCharacterSelection(char.id)">
-              <div
-                  class="card-avatar-wrapper"
-                  :style="char.rarity === 6 ? {} : { borderColor: getRarityBaseColor(char.rarity) }"
-              >
-                <img :src="char.avatar" loading="lazy" />
-                <div class="element-badge" :style="{ background: store.getColor(char.element) }"></div>
+            <div v-for="char in group.list" :key="char.id" class="roster-card" :class="[{ 'is-selected': store.tracks.some(t => t.id === char.id) }, `rarity-${char.rarity}-style`]" @click="confirmCharacterSelection(char.id)">
+              <div class="card-avatar-wrapper" :style="char.rarity === 6 ? {} : { borderColor: getRarityBaseColor(char.rarity) }">
+                <img :src="char.avatar" loading="lazy" /><div class="element-badge" :style="{ background: store.getColor(char.element) }"></div>
               </div>
               <div class="card-name">{{ char.name }}</div>
               <div v-if="store.tracks.some(t => t.id === char.id)" class="in-team-tag">已上场</div>
             </div>
           </div>
         </template>
-
-        <div v-if="rosterByRarity.length === 0" class="empty-roster">
-          没有找到匹配的干员
-        </div>
+        <div v-if="rosterByRarity.length === 0" class="empty-roster">没有找到匹配的干员</div>
       </div>
     </el-dialog>
   </div>
@@ -1391,26 +1536,111 @@ onUnmounted(() => {
 }
 
 /* ==========================================================================
-   9. Element Plus Overrides (Dark Mode)
+   9. Element Plus Overrides
    ========================================================================== */
 :deep(.char-selector-dialog) {
   background: #f5f5f5;
 }
-
 :deep(.char-selector-dialog .el-dialog__title) {
   color: #f0f0f0;
 }
-
 :deep(.char-selector-dialog .el-dialog__body) {
   padding-top: 10px;
 }
-
 :deep(.char-selector-dialog .el-input__wrapper) {
   background-color: #333;
   box-shadow: 0 0 0 1px #555 inset;
 }
-
 :deep(.char-selector-dialog .el-input__inner) {
   color: white;
 }
+
+/* ==========================================================================
+   10. Align Guide Styles
+   ========================================================================== */
+.align-guide-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2000;
+  overflow: visible;
+}
+
+.target-highlight-box {
+  position: absolute;
+  border: 1px solid;
+  border-radius: 4px;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0.1;
+  box-sizing: border-box;
+  transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.target-highlight-box::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border: 1px solid inherit;
+  border-radius: 5px;
+  opacity: 0.6;
+  animation: pulse-border 1.5s infinite;
+  box-shadow: 0 0 8px currentColor;
+}
+
+@keyframes pulse-border {
+  0% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+  100% { opacity: 0.4; transform: scale(1); }
+}
+
+.guide-line-vertical {
+  position: absolute;
+  top: -100px;
+  bottom: -100px;
+  width: 1px;
+  background: linear-gradient(to bottom,
+  transparent,
+  currentColor 20%,
+  currentColor 80%,
+  transparent
+  );
+  pointer-events: none;
+  box-shadow: 0 0 6px currentColor;
+  z-index: 2001;
+  transition: left 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.guide-float-label {
+  --arrow-color: transparent;
+  position: absolute;
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: #000;
+  font-weight: 800;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 2002;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: left 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.15s ease-out;
+}
+
+.guide-float-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border-width: 4px;
+  border-style: solid;
+  border-color: var(--arrow-color) transparent transparent transparent;
+}
+
 </style>
