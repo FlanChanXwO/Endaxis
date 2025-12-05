@@ -6,7 +6,7 @@ const uid = () => Math.random().toString(36).substring(2, 9)
 export const useTimelineStore = defineStore('timeline', () => {
 
     // ===================================================================================
-    // 1. 系统配置
+    // 1. 系统配置与常量
     // ===================================================================================
 
     const systemConstants = ref({
@@ -19,6 +19,7 @@ export const useTimelineStore = defineStore('timeline', () => {
 
     const BASE_BLOCK_WIDTH = 50
     const TOTAL_DURATION = 120
+    const MAX_SCENARIOS = 20
 
     const ELEMENT_COLORS = {
         "blaze": "#ff4d4f", "cold": "#00e5ff", "emag": "#ffd700", "nature": "#52c41a", "physical": "#e0e0e0",
@@ -39,6 +40,11 @@ export const useTimelineStore = defineStore('timeline', () => {
     const isLoading = ref(true)
     const characterRoster = ref([])
     const iconDatabase = ref({})
+
+    const activeScenarioId = ref('default_sc')
+    const scenarioList = ref([
+        { id: 'default_sc', name: '默认方案', data: null }
+    ])
 
     const tracks = ref([
         { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null },
@@ -63,11 +69,9 @@ export const useTimelineStore = defineStore('timeline', () => {
     const globalDragOffset = ref(0)
     const draggingSkillData = ref(null)
 
-    // 选中状态
     const selectedConnectionId = ref(null)
     const selectedActionId = ref(null)
     const selectedLibrarySkillId = ref(null)
-
     const selectedAnomalyId = ref(null)
 
     const multiSelectedIds = ref(new Set())
@@ -83,7 +87,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     const isActionSelected = (id) => selectedActionId.value === id || multiSelectedIds.value.has(id)
 
     // ===================================================================================
-    // 4. 历史记录
+    // 4. 历史记录 (Undo/Redo)
     // ===================================================================================
 
     const historyStack = ref([])
@@ -129,7 +133,120 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
 
     // ===================================================================================
-    // 5. 计算属性 & Helper
+    // 5. 方案管理逻辑 (Scenarios)
+    // ===================================================================================
+
+    function _createSnapshot() {
+        return JSON.parse(JSON.stringify({
+            tracks: tracks.value,
+            connections: connections.value,
+            characterOverrides: characterOverrides.value,
+            systemConstants: systemConstants.value
+        }))
+    }
+
+    function _loadSnapshot(data) {
+        if (!data) return
+        tracks.value = JSON.parse(JSON.stringify(data.tracks))
+        connections.value = JSON.parse(JSON.stringify(data.connections || []))
+        characterOverrides.value = JSON.parse(JSON.stringify(data.characterOverrides || {}))
+        if (data.systemConstants) {
+            systemConstants.value = { ...systemConstants.value, ...data.systemConstants }
+        }
+        clearSelection()
+    }
+
+    function switchScenario(targetId) {
+        if (targetId === activeScenarioId.value) return
+
+        const currentScenario = scenarioList.value.find(s => s.id === activeScenarioId.value)
+        if (currentScenario) {
+            currentScenario.data = _createSnapshot()
+        }
+
+        const targetScenario = scenarioList.value.find(s => s.id === targetId)
+        if (!targetScenario) return
+
+        if (targetScenario.data) {
+            _loadSnapshot(targetScenario.data)
+        } else {
+            targetScenario.data = _createSnapshot()
+        }
+
+        activeScenarioId.value = targetId
+        historyStack.value = []
+        historyIndex.value = -1
+        commitState()
+    }
+
+    function addScenario() {
+        if (scenarioList.value.length >= MAX_SCENARIOS) return
+
+        const currentScenario = scenarioList.value.find(s => s.id === activeScenarioId.value)
+        if (currentScenario) currentScenario.data = _createSnapshot()
+
+        const newId = `sc_${uid()}`
+        const newName = `方案 ${scenarioList.value.length + 1}`
+
+        const emptySnapshot = {
+            tracks: [{ id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }],
+            connections: [],
+            characterOverrides: {},
+            systemConstants: {
+                maxSp: 300,
+                initialSp: 200,
+                spRegenRate: 8,
+                skillSpCostDefault: 100,
+                maxStagger: 100
+            }
+        }
+
+        scenarioList.value.push({ id: newId, name: newName, data: emptySnapshot })
+        activeScenarioId.value = newId
+        _loadSnapshot(emptySnapshot)
+
+        historyStack.value = []
+        historyIndex.value = -1
+        commitState()
+    }
+
+    function duplicateScenario(sourceId) {
+        if (scenarioList.value.length >= MAX_SCENARIOS) return
+
+        const currentActive = scenarioList.value.find(s => s.id === activeScenarioId.value)
+        if (currentActive) currentActive.data = _createSnapshot()
+
+        const source = scenarioList.value.find(s => s.id === sourceId)
+        if (!source) return
+
+        const newId = `sc_${uid()}`
+        const newName = `${source.name} (副本)`
+        const newData = JSON.parse(JSON.stringify(source.data || _createSnapshot()))
+
+        scenarioList.value.push({ id: newId, name: newName, data: newData })
+        activeScenarioId.value = newId
+        _loadSnapshot(newData)
+
+        historyStack.value = []
+        historyIndex.value = -1
+        commitState()
+    }
+
+    function deleteScenario(targetId) {
+        if (scenarioList.value.length <= 1) return
+
+        const idx = scenarioList.value.findIndex(s => s.id === targetId)
+        if (idx === -1) return
+
+        if (targetId === activeScenarioId.value) {
+            const nextSc = scenarioList.value[idx - 1] || scenarioList.value[idx + 1]
+            switchScenario(nextSc.id)
+        }
+        scenarioList.value.splice(idx, 1)
+    }
+
+    // ===================================================================================
+    // 6. 辅助计算 (Getters & Helpers)
     // ===================================================================================
 
     const timeBlockWidth = computed(() => BASE_BLOCK_WIDTH)
@@ -172,7 +289,6 @@ export const useTimelineStore = defineStore('timeline', () => {
         return null
     }
 
-    // 根据 ID 反查坐标 (用于 PropertiesPanel 高亮)
     const getAnomalyIndexById = (actionId, effectId) => {
         if (!actionId || !effectId) return null
         const track = tracks.value.find(t => t.actions.some(a => a.instanceId === actionId))
@@ -213,7 +329,6 @@ export const useTimelineStore = defineStore('timeline', () => {
             const rawDuration = activeChar[`${suffix}_duration`] || 1
             const rawCooldown = activeChar[`${suffix}_cooldown`] || 0
 
-            // 读取判定点数据
             const rawTicks = activeChar[`${suffix}_damage_ticks`]
                 ? JSON.parse(JSON.stringify(activeChar[`${suffix}_damage_ticks`]))
                 : []
@@ -285,7 +400,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     })
 
     // ===================================================================================
-    // 6. 操作 Actions
+    // 7. 实体操作 (CRUD)
     // ===================================================================================
 
     function setScrollLeft(val) { timelineScrollLeft.value = val }
@@ -315,19 +430,14 @@ export const useTimelineStore = defineStore('timeline', () => {
     function selectAction(instanceId) {
         selectedLibrarySkillId.value = null
         selectedConnectionId.value = null
-        selectedAnomalyId.value = null // 切动作时清空图标选中
-
+        selectedAnomalyId.value = null
         selectedActionId.value = (instanceId === selectedActionId.value) ? null : instanceId
-
         multiSelectedIds.value.clear()
         if (selectedActionId.value) { multiSelectedIds.value.add(selectedActionId.value) }
     }
 
-    function setSelectedAnomalyId(id) {
-        selectedAnomalyId.value = id
-    }
+    function setSelectedAnomalyId(id) { selectedAnomalyId.value = id }
 
-    // 选中图标 (记录 ID)
     function selectAnomaly(instanceId, rowIndex, colIndex) {
         selectedLibrarySkillId.value = null
         selectedConnectionId.value = null
@@ -354,9 +464,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         selectedConnectionId.value = (selectedConnectionId.value === connId) ? null : connId
     }
 
-    function setHoveredAction(id) {
-        hoveredActionId.value = id
-    }
+    function setHoveredAction(id) { hoveredActionId.value = id }
 
     function setMultiSelection(idsArray) {
         multiSelectedIds.value = new Set(idsArray)
@@ -689,6 +797,10 @@ export const useTimelineStore = defineStore('timeline', () => {
         return false
     }
 
+    // ===================================================================================
+    // 8. 监控数据计算 (Monitor Data)
+    // ===================================================================================
+
     function calculateGlobalStaggerData() {
         const { maxStagger } = systemConstants.value;
         const events = []
@@ -808,18 +920,83 @@ export const useTimelineStore = defineStore('timeline', () => {
         return points;
     }
 
-    const STORAGE_KEY = 'endaxis_autosave_v2'
+    // ===================================================================================
+    // 9. 持久化与数据加载 (Persistence)
+    // ===================================================================================
+
+    const STORAGE_KEY = 'endaxis_autosave'
+
     function initAutoSave() {
-        watch([tracks, connections, characterOverrides, systemConstants], ([newTracks, newConns, newOverrides, newSys]) => {
-            if (isLoading.value) return
-            const snapshot = { version: '2.0.0', timestamp: Date.now(), tracks: newTracks, connections: newConns, characterOverrides: newOverrides, systemConstants: newSys }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-        }, { deep: true })
+        watch([tracks, connections, characterOverrides, systemConstants, scenarioList, activeScenarioId],
+            ([newTracks, newConns, newOverrides, newSys, newScList, newActiveId]) => {
+                if (isLoading.value) return
+
+                const listToSave = JSON.parse(JSON.stringify(newScList))
+                const currentSc = listToSave.find(s => s.id === newActiveId)
+                if (currentSc) {
+                    currentSc.data = {
+                        tracks: newTracks,
+                        connections: newConns,
+                        characterOverrides: newOverrides
+                    }
+                }
+
+                const snapshot = {
+                    version: '1.0.0',
+                    timestamp: Date.now(),
+                    scenarioList: listToSave,
+                    activeScenarioId: newActiveId,
+                    systemConstants: newSys
+                }
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+            }, { deep: true })
     }
+
     function loadFromBrowser() {
-        const raw = localStorage.getItem(STORAGE_KEY); if (raw) { try { const data = JSON.parse(raw); if (data.tracks) { tracks.value = data.tracks; connections.value = data.connections || []; characterOverrides.value = data.characterOverrides || {}; if (data.systemConstants) systemConstants.value = { ...systemConstants.value, ...data.systemConstants }; historyStack.value = []; historyIndex.value = -1; commitState(); return true; } } catch (e) { console.error("Auto-save load failed:", e) } } return false;
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            try {
+                const data = JSON.parse(raw);
+
+                if (!data.scenarioList) return false;
+
+                if (data.systemConstants) systemConstants.value = { ...systemConstants.value, ...data.systemConstants };
+
+                scenarioList.value = data.scenarioList
+                activeScenarioId.value = data.activeScenarioId || scenarioList.value[0].id
+
+                const currentSc = scenarioList.value.find(s => s.id === activeScenarioId.value)
+                if (currentSc && currentSc.data) {
+                    _loadSnapshot(currentSc.data)
+                } else {
+                    tracks.value = [{ id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }];
+                    connections.value = [];
+                    characterOverrides.value = {};
+                }
+
+                historyStack.value = []; historyIndex.value = -1; commitState();
+                return true;
+            } catch (e) { console.error("Auto-save load failed:", e) }
+        }
+        return false;
     }
-    function resetProject() { localStorage.removeItem(STORAGE_KEY); tracks.value = [{ id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }]; connections.value = []; characterOverrides.value = {}; clearSelection(); historyStack.value = []; historyIndex.value = -1; commitState(); }
+
+    function resetProject() {
+        localStorage.removeItem(STORAGE_KEY);
+        tracks.value = [{ id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }];
+        connections.value = [];
+        characterOverrides.value = {};
+
+        // 重置方案
+        scenarioList.value = [{ id: 'default_sc', name: '方案 1', data: null }];
+        activeScenarioId.value = 'default_sc';
+
+        clearSelection();
+        historyStack.value = [];
+        historyIndex.value = -1;
+        commitState();
+    }
+
     async function fetchGameData() {
         try {
             isLoading.value = true; const response = await fetch(import.meta.env.BASE_URL + 'gamedata.json'); if (!response.ok) throw new Error('Failed'); const data = await response.json();
@@ -827,10 +1004,71 @@ export const useTimelineStore = defineStore('timeline', () => {
             characterRoster.value = data.characterRoster.sort((a, b) => (b.rarity || 0) - (a.rarity || 0)); iconDatabase.value = data.ICON_DATABASE; historyStack.value = []; historyIndex.value = -1; commitState();
         } catch (error) { console.error("Load failed:", error) } finally { isLoading.value = false }
     }
-    function exportProject() { const projectData = { timestamp: Date.now(), tracks: tracks.value, connections: connections.value, characterOverrides: characterOverrides.value, systemConstants: systemConstants.value }; const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `endaxis_project_${new Date().toISOString().slice(0, 10)}.json`; link.click(); URL.revokeObjectURL(link.href) }
-    async function importProject(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (e) => { try { const data = JSON.parse(e.target.result); if (!data.tracks) throw new Error("Invalid"); tracks.value = data.tracks; connections.value = data.connections || []; characterOverrides.value = data.characterOverrides || {}; if (data.systemConstants) { systemConstants.value = { ...systemConstants.value,  ...data.systemConstants }; } clearSelection(); historyStack.value = []; historyIndex.value = -1; commitState(); resolve(true) } catch (err) { reject(err) } }; reader.readAsText(file) }) }
+
+    function exportProject() {
+        const listToExport = JSON.parse(JSON.stringify(scenarioList.value))
+        const currentSc = listToExport.find(s => s.id === activeScenarioId.value)
+        if (currentSc) {
+            currentSc.data = {
+                tracks: tracks.value,
+                connections: connections.value,
+                characterOverrides: characterOverrides.value
+            }
+        }
+
+        const projectData = {
+            timestamp: Date.now(),
+            version: '1.0.0',
+            scenarioList: listToExport,
+            activeScenarioId: activeScenarioId.value,
+            systemConstants: systemConstants.value
+        };
+
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `endaxis_project_${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href)
+    }
+
+    async function importProject(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (data.systemConstants) { systemConstants.value = { ...systemConstants.value, ...data.systemConstants }; }
+
+                    if (data.scenarioList) {
+                        scenarioList.value = data.scenarioList
+                        const validId = data.scenarioList.find(s => s.id === data.activeScenarioId) ? data.activeScenarioId : data.scenarioList[0].id
+                        activeScenarioId.value = validId
+
+                        const currentSc = scenarioList.value.find(s => s.id === activeScenarioId.value)
+                        if (currentSc && currentSc.data) {
+                            _loadSnapshot(currentSc.data)
+                        } else {
+                            tracks.value = [{ id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }, { id: null, actions: [] }];
+                            connections.value = [];
+                            characterOverrides.value = {};
+                        }
+                    }
+
+                    clearSelection();
+                    historyStack.value = [];
+                    historyIndex.value = -1;
+                    commitState();
+                    resolve(true)
+                } catch (err) { reject(err) }
+            };
+            reader.readAsText(file)
+        })
+    }
 
     return {
+        MAX_SCENARIOS,
         systemConstants, isLoading, characterRoster, iconDatabase, tracks, connections, activeTrackId, timelineScrollLeft, globalDragOffset, draggingSkillData,
         selectedActionId, selectedLibrarySkillId, multiSelectedIds, clipboard, isLinking, linkingSourceId, linkingEffectIndex, linkingSourceEffectId, showCursorGuide, isBoxSelectMode, cursorCurrentTime, snapStep,
         selectedAnomalyId, setSelectedAnomalyId,
@@ -841,5 +1079,6 @@ export const useTimelineStore = defineStore('timeline', () => {
         setMultiSelection, clearSelection, copySelection, pasteSelection, removeCurrentSelection, undo, redo, commitState,
         removeAnomaly, initAutoSave, loadFromBrowser, resetProject, selectedConnectionId, selectConnection, selectAnomaly, getAnomalyIndexById,
         findEffectIndexById, alignActionToTarget,
+        scenarioList, activeScenarioId, switchScenario, addScenario, duplicateScenario, deleteScenario,
     }
 })

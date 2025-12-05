@@ -1,64 +1,29 @@
-/* src/assets/main.css */
-
-/* ==========================================================================
-   1. 全局重置与基础设置
-   ========================================================================== */
 body, html, #app {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100vh;
-  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* 更现代的字体栈 */
-  background-color: #18181c; /* 与 TimelineGrid 背景一致的深色 */
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #18181c;
   color: #f0f0f0;
   overflow: hidden;
 }
 
-/* 通用工具类 */
 .hidden { display: none !important; }
 
-/* ==========================================================================
-   2. 技能库组件样式 (通用部分)
-   ========================================================================== */
-.skill-item {
-  /* 这里的样式其实主要在 ActionLibrary.vue 的 scoped 里定义了，
-     但为了保险起见，这里保留基础布局 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* ==========================================================================
-   3. 交互状态管理 (关键)
-   ========================================================================== */
-
-/**
- * [交互核心] 库模式拖拽状态
- * 当 body 有 is-lib-dragging 类时 (从左侧拖出新技能)：
- * 1. 轨道上现有的动作块忽略鼠标事件，变成“幽灵”。
- * 2. 这确保了 drop 事件能穿透动作块，直接落在轨道 (.track-row) 上。
- */
 body.is-lib-dragging .action-item-wrapper {
   pointer-events: none !important;
-  opacity: 0.5 !important; /* 让它们变暗，突出当前拖拽物 */
-  filter: grayscale(0.5);  /* 稍微变灰，降低视觉干扰 */
+  opacity: 0.5 !important;
+  filter: grayscale(0.5);
   transition: opacity 0.2s;
 }
 
-/**
- * [视觉反馈] 轨道内拖拽高亮
- * 在 TimelineGrid 内部调整位置时
- */
 .action-item-wrapper.is-moving {
   opacity: 0.9 !important;
   z-index: 999 !important;
   cursor: grabbing !important;
-  transition: none !important; /* 关闭过渡以保证跟手 */
-
-  /* 拖拽时的高亮样式 */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important; /* 金色光晕 */
+  transition: none !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
   border-color: #ffd700 !important;
-  transform: scale(1.02); /* 稍微放大 */
+  transform: scale(1.02);
 }

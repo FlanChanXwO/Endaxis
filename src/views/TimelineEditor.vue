@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick, computed } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import html2canvas from 'html2canvas'
 import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
@@ -12,6 +12,67 @@ import SpMonitor from '../components/SpMonitor.vue'
 import StaggerMonitor from '../components/StaggerMonitor.vue'
 
 const store = useTimelineStore()
+
+// === 方案管理逻辑 ===
+const editingScenarioId = ref(null)
+const renameInputRef = ref(null)
+
+const currentScenario = computed(() => {
+  return store.scenarioList.find(s => s.id === store.activeScenarioId) || store.scenarioList[0]
+})
+
+const formatIndex = (index) => {
+  return (index + 1).toString().padStart(2, '0')
+}
+
+function startRenameCurrent() {
+  if (!currentScenario.value) return
+  editingScenarioId.value = currentScenario.value.id
+  nextTick(() => {
+    if (renameInputRef.value) {
+      renameInputRef.value.focus()
+      renameInputRef.value.select()
+    }
+  })
+}
+
+function finishRename() {
+  editingScenarioId.value = null
+}
+
+function handleDeleteCurrent() {
+  if (!currentScenario.value) return
+  handleDeleteScenario(currentScenario.value.id)
+}
+
+function handleDeleteScenario(id) {
+  ElMessageBox.confirm(
+      '确定要删除该方案吗？此操作无法撤销。',
+      '删除方案',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }
+  ).then(() => {
+    store.deleteScenario(id)
+    ElMessage.success('方案已删除')
+  }).catch(() => {})
+}
+
+function handleDuplicateCurrent() {
+  if (!currentScenario.value) return
+  if (store.scenarioList.length >= store.MAX_SCENARIOS) {
+    ElMessage.warning(`方案数量已达上限 (${store.MAX_SCENARIOS})`)
+    return
+  }
+  store.duplicateScenario(currentScenario.value.id)
+  ElMessage.success('方案已复制')
+}
+
+function handleAddScenario() {
+  if (store.scenarioList.length >= store.MAX_SCENARIOS) {
+    ElMessage.warning(`方案数量已达上限 (${store.MAX_SCENARIOS})`)
+    return
+  }
+  store.addScenario()
+}
 
 // === 关于弹窗逻辑 ===
 const aboutDialogVisible = ref(false)
@@ -42,7 +103,6 @@ async function onFileSelected(event) {
   } catch (e) {
     ElMessage.error('加载失败：' + e.message)
   } finally {
-    // 清空 input，以便下次可以选择同名文件
     event.target.value = ''
   }
 }
@@ -54,7 +114,6 @@ const exportForm = ref({ filename: '', duration: 60 })
 function openExportDialog() {
   const dateStr = new Date().toISOString().slice(0, 10)
   exportForm.value.filename = `Endaxis_Timeline_${dateStr}`
-  // 默认导出前 60秒
   exportForm.value.duration = 60
   exportDialogVisible.value = true
 }
@@ -70,7 +129,6 @@ async function processExport() {
   const sidebarWidth = 180
   const rightMargin = 50
 
-  // 计算需要渲染的总宽度
   const contentWidth = durationSeconds * pixelsPerSecond
   const totalWidth = sidebarWidth + contentWidth + rightMargin
 
@@ -80,29 +138,24 @@ async function processExport() {
     background: 'rgba(0, 0, 0, 0.9)'
   })
 
-  // 记录原始滚动位置
   const originalScrollLeft = store.timelineScrollLeft
 
-  // 获取关键DOM元素
   const workspaceEl = document.querySelector('.timeline-workspace')
   const timelineMain = document.querySelector('.timeline-main')
   const gridLayout = document.querySelector('.timeline-grid-layout')
   const scrollers = document.querySelectorAll('.tracks-content-scroller, .chart-scroll-wrapper, .timeline-grid-container')
   const tracksContent = document.querySelector('.tracks-content')
 
-  // 备份样式
   const styleMap = new Map()
   const backupStyle = (el) => { if (el) styleMap.set(el, el.style.cssText) }
   backupStyle(workspaceEl); backupStyle(timelineMain); backupStyle(gridLayout); backupStyle(tracksContent)
   scrollers.forEach(el => backupStyle(el))
 
   try {
-    // 1. 强制滚动回零
     store.setScrollLeft(0)
     scrollers.forEach(el => el.scrollLeft = 0)
     await new Promise(resolve => setTimeout(resolve, 100))
 
-    // 2. 强制展开容器宽度
     if (timelineMain) { timelineMain.style.width = `${totalWidth}px`; timelineMain.style.overflow = 'visible'; }
     if (workspaceEl) { workspaceEl.style.width = `${totalWidth}px`; workspaceEl.style.overflow = 'visible'; }
     if (gridLayout) {
@@ -113,7 +166,6 @@ async function processExport() {
     }
     scrollers.forEach(el => { el.style.width = '100%'; el.style.overflow = 'visible'; el.style.maxWidth = 'none' })
 
-    // 3. 强制展开 SVG 画布
     if (tracksContent) {
       tracksContent.style.width = `${contentWidth}px`
       tracksContent.style.minWidth = `${contentWidth}px`
@@ -124,13 +176,11 @@ async function processExport() {
       })
     }
 
-    // 等待渲染刷新
     await new Promise(resolve => setTimeout(resolve, 400))
 
-    // 4. 开始截图
     const canvas = await html2canvas(workspaceEl, {
       backgroundColor: '#282828',
-      scale: 1.5, // 提高清晰度
+      scale: 1.5,
       width: totalWidth,
       height: workspaceEl.scrollHeight + 20,
       windowWidth: totalWidth,
@@ -138,7 +188,6 @@ async function processExport() {
       logging: false
     })
 
-    // 5. 下载
     const link = document.createElement('a')
     link.download = userFilename
     link.href = canvas.toDataURL('image/png')
@@ -149,7 +198,6 @@ async function processExport() {
     console.error(error)
     ElMessage.error('导出失败：' + error.message)
   } finally {
-    // 6. 恢复现场
     styleMap.forEach((cssText, el) => el.style.cssText = cssText)
     store.setScrollLeft(originalScrollLeft)
     loading.close()
@@ -159,7 +207,7 @@ async function processExport() {
 // === 重置与快捷键 ===
 function handleReset() {
   ElMessageBox.confirm(
-      '确定要清空当前所有进度吗？此操作无法撤销，且会清除浏览器缓存。',
+      '确定要清空当前所有进度吗？这将清空所有方案数据。',
       '警告',
       {
         confirmButtonText: '确定清空',
@@ -204,21 +252,75 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
 
     <main class="timeline-main">
       <header class="timeline-header" @click="store.selectTrack(null)">
+
+        <div class="tech-scenario-bar">
+
+          <div class="ts-header-group">
+
+            <button class="ts-icon-btn" @click="startRenameCurrent" title="重命名当前方案">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </button>
+
+            <button class="ts-icon-btn" @click="handleDuplicateCurrent" title="复制当前方案">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+
+            <button
+                v-if="store.scenarioList.length > 1"
+                class="ts-icon-btn danger"
+                @click="handleDeleteCurrent"
+                title="删除当前方案"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+
+            <div class="ts-title-wrapper">
+              <div class="ts-deco-bracket">[</div>
+              <input
+                  v-if="editingScenarioId === currentScenario?.id"
+                  ref="renameInputRef"
+                  v-model="currentScenario.name"
+                  @blur="finishRename"
+                  @keydown.enter="finishRename"
+                  class="ts-title-input"
+              />
+              <span v-else class="ts-title-text" @dblclick="startRenameCurrent">
+                {{ currentScenario?.name || '未命名方案' }}
+              </span>
+              <div class="ts-deco-bracket">]</div>
+            </div>
+
+          </div>
+
+          <div class="ts-tabs-group">
+            <div
+                v-for="(sc, index) in store.scenarioList"
+                :key="sc.id"
+                class="ts-tab-item"
+                :class="{ 'is-active': sc.id === store.activeScenarioId }"
+                @click="store.switchScenario(sc.id)"
+            >
+              {{ formatIndex(index) }}
+            </div>
+
+            <button
+                v-if="store.scenarioList.length < store.MAX_SCENARIOS"
+                class="ts-add-btn"
+                @click="handleAddScenario"
+                title="新建方案"
+            >+</button>
+          </div>
+
+        </div>
+
         <div class="header-controls">
           <input type="file" ref="fileInputRef" style="display: none" accept=".json" @change="onFileSelected" />
-
-          <button class="control-btn info-btn" @click="aboutDialogVisible = true" title="查看教程与项目信息">
-            ℹ️ 关于
-          </button>
-
+          <button class="control-btn info-btn" @click="aboutDialogVisible = true" title="查看教程与项目信息">ℹ️ 关于</button>
           <div class="divider-vertical"></div>
-
           <button class="control-btn danger-btn" @click="handleReset" title="清空所有内容">🗑️ 重置</button>
           <div class="divider-vertical"></div>
-
           <button class="control-btn export-img-btn" @click="openExportDialog" title="导出为PNG长图">📷 导出图片</button>
           <div class="divider-vertical"></div>
-
           <button class="control-btn load-btn" @click="triggerImport" title="导入 .json 项目文件">📂 加载</button>
           <button class="control-btn save-btn" @click="store.exportProject" title="保存为 .json 文件">💾 保存</button>
         </div>
@@ -258,7 +360,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
           <h3>项目概况</h3>
           <p>
             目前数值填好的干员只有：管理员，骏卫，黎风，陈千语，大潘<br>
-            甚至不一定填好了，如果有玩家有干员的详细数据（释放技能所需时间，战技回复的充能等）都可以联系视频置顶评论的那个人（我）
+            其他干员可能仅有头像和默认占位数据。如果有意向提供详细数据可以联系我们。
           </p>
         </div>
 
@@ -305,28 +407,48 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
 .properties-sidebar { background-color: #333; overflow: hidden; z-index: 10; }
 
 /* Header */
-.timeline-header { height: 50px; flex-shrink: 0; border-bottom: 1px solid #444; background-color: #3a3a3a; display: flex; align-items: center; justify-content: flex-end; /* 改为靠右对齐，因为移除了左侧缩放 */ padding: 0 20px; cursor: default; user-select: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.timeline-header { height: 50px; flex-shrink: 0; border-bottom: 1px solid #444; background-color: #3a3a3a; display: flex; align-items: center; justify-content: space-between; padding: 0 10px 0 0; cursor: default; user-select: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
 
 .header-controls { display: flex; align-items: center; gap: 10px; }
 .divider-vertical { width: 1px; height: 20px; background-color: #555; margin: 0 5px; }
+
+/* === 方案选择器样式 === */
+.tech-scenario-bar { display: flex; align-items: center; height: 36px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%); padding: 0 10px; margin-right: auto; position: relative; min-width: 600px; }
+
+.ts-header-group { display: flex; align-items: center; gap: 4px; position: relative; padding-right: 10px; max-width: 260px; overflow: hidden; }
+
+.ts-tabs-group { display: flex; align-items: center; gap: 4px; background: transparent; padding: 0; border-radius: 0; position: absolute; left: 290px; top: 50%; transform: translateY(-50%); }
+
+.ts-icon-btn { width: 24px; height: 24px; background: transparent; border: 1px solid transparent; border-radius: 4px; color: #888; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.ts-icon-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #555; }
+.ts-icon-btn.danger:hover { background: rgba(255, 77, 79, 0.1); color: #ff4d4f; border-color: #ff4d4f; }
+
+.ts-title-wrapper { display: flex; align-items: baseline; color: #f0f0f0; font-size: 16px; font-weight: bold; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px; margin-left: 4px; }
+.ts-deco-bracket { color: #666; font-weight: 300; margin: 0 2px; user-select: none; }
+
+.ts-title-text { white-space: nowrap; cursor: pointer; border-bottom: 1px dashed transparent; }
+.ts-title-text:hover { border-bottom-color: #888; }
+
+.ts-title-input { background: transparent; border: none; border-bottom: 1px solid #ffd700; color: #ffd700; font-size: 16px; font-weight: bold; width: 120px; outline: none; padding: 0; }
+
+.ts-tab-item { min-width: 32px; height: 24px; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: bold; color: #666; background-color: transparent; border-radius: 4px; cursor: pointer; transition: all 0.2s; user-select: none; }
+.ts-tab-item:hover { background-color: rgba(255, 255, 255, 0.05); color: #aaa; }
+.ts-tab-item.is-active { background-color: #d0d0d0; color: #111; box-shadow: 0 0 5px rgba(255, 255, 255, 0.2); }
+
+.ts-add-btn { width: 24px; height: 24px; background: transparent; border: 1px dashed #555; color: #666; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; transition: all 0.2s; }
+.ts-add-btn:hover { border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.05); }
+.ts-add-btn.is-disabled { opacity: 0.3; cursor: not-allowed; border-color: #444; color: #444; }
+.ts-add-btn.is-disabled:hover { background: transparent; border-color: #444; color: #444; }
 
 /* Buttons */
 .control-btn { padding: 6px 14px; border: 1px solid #555; background-color: #444; color: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; font-weight: 500; }
 .control-btn:hover { background-color: #555; border-color: #777; transform: translateY(-1px); }
 .control-btn:active { transform: translateY(1px); }
-
-/* Button Colors */
 .save-btn:hover { border-color: #4CAF50; color: #4CAF50; background-color: rgba(76, 175, 80, 0.1); }
 .load-btn:hover { border-color: #4a90e2; color: #4a90e2; background-color: rgba(74, 144, 226, 0.1); }
 .export-img-btn:hover { border-color: #e6a23c; color: #e6a23c; background-color: rgba(230, 162, 60, 0.1); }
 .danger-btn:hover { border-color: #ff7875; color: #ff7875; background-color: rgba(255, 77, 79, 0.1); }
-
-/* 关于按钮颜色 */
-.info-btn:hover {
-  border-color: #00e5ff;
-  color: #00e5ff;
-  background-color: rgba(0, 229, 255, 0.1);
-}
+.info-btn:hover { border-color: #00e5ff; color: #00e5ff; background-color: rgba(0, 229, 255, 0.1); }
 
 /* Workspace & Panels */
 .timeline-workspace { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -346,54 +468,15 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
 .hint { font-size: 12px; color: #888; margin-top: 6px; }
 
 /* 关于弹窗内容样式 */
-.about-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  color: #ccc;
-  line-height: 1.6;
-}
-
-.about-section h3 {
-  margin: 0 0 10px 0;
-  color: #ffd700;
-  font-size: 15px;
-  border-left: 3px solid #ffd700;
-  padding-left: 8px;
-}
-
+.about-content { display: flex; flex-direction: column; gap: 20px; color: #ccc; line-height: 1.6; }
+.about-section h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 15px; border-left: 3px solid #ffd700; padding-left: 8px; }
 .about-section p { margin: 0; font-size: 13px; }
-
-.link-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+.link-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .link-list li { display: flex; align-items: center; font-size: 13px; }
-
 .link-label { color: #aaa; margin-right: 5px; }
-
-.highlight-link {
-  color: #00e5ff;
-  text-decoration: none;
-  border-bottom: 1px dashed rgba(0, 229, 255, 0.5);
-  transition: all 0.2s;
-}
-
+.highlight-link { color: #00e5ff; text-decoration: none; border-bottom: 1px dashed rgba(0, 229, 255, 0.5); transition: all 0.2s; }
 .highlight-link:hover { color: #fff; border-bottom-style: solid; }
-
-.notice-text {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 10px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 12px;
-  color: #aaa;
-}
+.notice-text { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #aaa; }
 
 /* Dark Mode Adapter for Element Plus Dialog */
 :deep(.el-dialog) { background-color: #2b2b2b; border: 1px solid #444; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
