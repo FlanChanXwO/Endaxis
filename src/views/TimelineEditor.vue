@@ -440,8 +440,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
         <div class="about-section">
           <h3>项目概况</h3>
           <p>
-            目前数值填好的干员只有：管理员，骏卫，黎风，陈千语，大潘<br>
-            其他干员可能仅有头像和默认占位数据。如果有意向提供详细数据可以联系我们。
+            大部分干员可能仅有头像和默认占位数据。如果有意向提供详细数据可以联系我们。
           </p>
         </div>
 
@@ -468,12 +467,31 @@ onUnmounted(() => { window.removeEventListener('keydown', handleGlobalKeydown) }
             </li>
           </ul>
         </div>
+
+        <div class="about-section">
+          <h3>🤝 友情链接</h3>
+          <ul class="link-list">
+            <li>
+              <span class="link-label">地图：</span>
+              <a href="https://www.zmdmap.com/" target="_blank" class="highlight-link">
+                终末地资源互动地图
+              </a>
+            </li>
+            <li>
+              <span class="link-label">一图流：</span>
+              <a href="https://ef.yituliu.cn/" target="_blank" class="highlight-link">
+                终末地一图流
+              </a>
+            </li>
+          </ul>
+        </div>
+
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button type="primary" @click="aboutDialogVisible = false">开始使用</el-button>
-        </span>
+    <span class="dialog-footer">
+      <el-button type="primary" @click="aboutDialogVisible = false">开始使用</el-button>
+    </span>
       </template>
     </el-dialog>
 

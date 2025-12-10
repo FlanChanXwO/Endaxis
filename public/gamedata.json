@@ -343,7 +343,76 @@
       ],
       "execution_anomalies": [],
       "accept_team_gauge": true,
-      "variants": []
+      "variants": [
+        {
+          "id": "v_1765344369190",
+          "name": "连携1",
+          "type": "link",
+          "duration": 0.8,
+          "allowedTypes": [],
+          "physicalAnomaly": [],
+          "damageTicks": [
+            {
+              "offset": 0.76,
+              "sp": 5,
+              "stagger": 3
+            }
+          ],
+          "cooldown": 18,
+          "gaugeGain": 10
+        },
+        {
+          "id": "v_1765344406616",
+          "name": "连携2",
+          "type": "link",
+          "duration": 1.4,
+          "allowedTypes": [],
+          "physicalAnomaly": [],
+          "damageTicks": [
+            {
+              "offset": 0.76,
+              "sp": 5,
+              "stagger": 3
+            },
+            {
+              "offset": 1.38,
+              "stagger": 4,
+              "sp": 7
+            }
+          ],
+          "cooldown": 18,
+          "gaugeGain": 10
+        },
+        {
+          "id": "v_1765344414601",
+          "name": "连携3",
+          "type": "link",
+          "duration": 2.4,
+          "allowedTypes": [],
+          "physicalAnomaly": [],
+          "damageTicks": [
+            {
+              "offset": 0.76,
+              "sp": 5,
+              "stagger": 3
+            },
+            {
+              "offset": 1.38,
+              "stagger": 4,
+              "sp": 7
+            },
+            {
+              "offset": 2.3,
+              "stagger": 9,
+              "sp": 13
+            }
+          ],
+          "cooldown": 18,
+          "gaugeGain": 10
+        }
+      ],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "ARDELIA",
@@ -498,7 +567,9 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "LASTRITE",
@@ -618,7 +689,9 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": false
+      "accept_team_gauge": false,
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "GILBERTA",
@@ -793,7 +866,9 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "YVONNE",
@@ -942,7 +1017,41 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "variants": [
+        {
+          "id": "v_1765344226962",
+          "name": "强化战技",
+          "type": "skill",
+          "duration": 1,
+          "allowedTypes": [
+            "frozen",
+            "cold_attach",
+            "cold_burst"
+          ],
+          "physicalAnomaly": [
+            [
+              {
+                "type": "cold_attach",
+                "stacks": 1,
+                "duration": 0
+              }
+            ]
+          ],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 0,
+              "stagger": 10
+            }
+          ],
+          "spCost": 100,
+          "gaugeGain": 6.5,
+          "teamGaugeGain": 6.5
+        }
+      ],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "LAEVATAIN",
@@ -1144,7 +1253,102 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "variants": [
+        {
+          "id": "v_1765344039364",
+          "name": "强化重击",
+          "type": "attack",
+          "duration": 3.3,
+          "allowedTypes": [
+            "magma_1",
+            "magma_2",
+            "magma_3",
+            "magma_4",
+            "blaze_attach",
+            "blaze_burst",
+            "burning"
+          ],
+          "physicalAnomaly": [],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 22,
+              "stagger": 24
+            }
+          ]
+        },
+        {
+          "id": "v_1765344082644",
+          "name": "强化战技",
+          "type": "skill",
+          "duration": 1.9,
+          "allowedTypes": [
+            "burning",
+            "blaze_attach",
+            "blaze_burst",
+            "magma_1",
+            "magma_2",
+            "magma_3",
+            "magma_4"
+          ],
+          "physicalAnomaly": [
+            [
+              {
+                "type": "magma_1",
+                "stacks": 1,
+                "duration": 0
+              }
+            ]
+          ],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 0,
+              "stagger": 20
+            }
+          ],
+          "spCost": 100,
+          "gaugeGain": 106.5,
+          "teamGaugeGain": 6.5
+        },
+        {
+          "id": "v_1765344189692",
+          "name": "大招内强化战技",
+          "type": "skill",
+          "duration": 1.9,
+          "allowedTypes": [
+            "burning",
+            "blaze_attach",
+            "blaze_burst",
+            "magma_1",
+            "magma_2",
+            "magma_3",
+            "magma_4"
+          ],
+          "physicalAnomaly": [
+            [
+              {
+                "type": "magma_1",
+                "stacks": 1,
+                "duration": 0
+              }
+            ]
+          ],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 0,
+              "stagger": 30
+            }
+          ],
+          "spCost": 100,
+          "gaugeGain": 0,
+          "teamGaugeGain": 0
+        }
+      ],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "LIFENG",
@@ -1264,7 +1468,12 @@
         {
           "offset": 0,
           "sp": 0,
-          "stagger": 0
+          "stagger": 5
+        },
+        {
+          "offset": 2,
+          "stagger": 5,
+          "sp": 0
         }
       ],
       "ultimate_allowed_types": [
@@ -1318,7 +1527,64 @@
       ],
       "execution_anomalies": [],
       "accept_team_gauge": true,
-      "variants": []
+      "variants": [
+        {
+          "id": "v_1765344650632",
+          "name": "强化大招",
+          "type": "ultimate",
+          "duration": 0.5,
+          "allowedTypes": [
+            "knockdown",
+            "break",
+            "ice_shatter"
+          ],
+          "physicalAnomaly": [
+            [
+              {
+                "type": "knockdown",
+                "stacks": 1,
+                "duration": 2,
+                "hideDuration": true
+              },
+              {
+                "type": "knockdown",
+                "stacks": 1,
+                "duration": 1.9,
+                "hideDuration": true
+              },
+              {
+                "type": "knockdown",
+                "stacks": 1,
+                "duration": 0,
+                "offset": 0
+              }
+            ]
+          ],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 0,
+              "stagger": 5
+            },
+            {
+              "offset": 2,
+              "stagger": 5,
+              "sp": 0
+            },
+            {
+              "offset": 3.9,
+              "stagger": 5,
+              "sp": 0
+            }
+          ],
+          "gaugeCost": 90,
+          "gaugeGain": 0,
+          "enhancementTime": 0,
+          "animationTime": 0
+        }
+      ],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "EMBER",
@@ -1452,7 +1718,9 @@
         "corrosion"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "XAIHI",
@@ -1571,7 +1839,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "SNOWSHINE",
@@ -1694,7 +1964,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "ARCLIGHT",
@@ -1815,7 +2087,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "AVYWENNA",
@@ -1931,7 +2205,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "DAPAN",
@@ -2106,7 +2382,9 @@
       ],
       "execution_anomalies": [],
       "variants": [],
-      "attack_gaugeGain": 0
+      "attack_gaugeGain": 0,
+      "ultimate_animationTime": 0.5,
+      "ultimate_enhancementTime": 0
     },
     {
       "id": "WULFGARD",
@@ -2152,7 +2430,7 @@
         {
           "offset": 0,
           "sp": 0,
-          "stagger": 10
+          "stagger": 5
         }
       ],
       "skill_allowed_types": [
@@ -2252,7 +2530,29 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "variants": [
+        {
+          "id": "v_1765344273644",
+          "name": "强化战技",
+          "type": "skill",
+          "duration": 2,
+          "allowedTypes": [],
+          "physicalAnomaly": [],
+          "damageTicks": [
+            {
+              "offset": 0,
+              "sp": 0,
+              "stagger": 10
+            }
+          ],
+          "spCost": 75,
+          "gaugeGain": 6.5,
+          "teamGaugeGain": 6.5
+        }
+      ],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "PERLICA",
@@ -2386,7 +2686,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "CHENQIANYU",
@@ -2523,7 +2825,8 @@
       ],
       "execution_anomalies": [],
       "accept_team_gauge": true,
-      "ultimate_enhancementTime": 0
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "ALESH",
@@ -2654,7 +2957,9 @@
         "nature_burst"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_animationTime": 0.5,
+      "ultimate_enhancementTime": 0
     },
     {
       "id": "CATCHER",
@@ -2777,7 +3082,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "FLUORITE",
@@ -2881,7 +3188,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "ANTAL",
@@ -2985,7 +3294,9 @@
         "ice_shatter",
         "corrosion"
       ],
-      "execution_anomalies": []
+      "execution_anomalies": [],
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "ESTELLA",
@@ -3118,7 +3429,9 @@
         "emag_burst"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_enhancementTime": 0,
+      "ultimate_animationTime": 0.5
     },
     {
       "id": "AKEKURI",
@@ -3234,7 +3547,9 @@
         "armor_break"
       ],
       "execution_anomalies": [],
-      "accept_team_gauge": true
+      "accept_team_gauge": true,
+      "ultimate_animationTime": 0.5,
+      "ultimate_enhancementTime": 0
     }
   ]
 }
