@@ -1027,7 +1027,10 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
 
     function calculateCdReduction(myStartTime, myRawCooldown, myInstanceId) {
-        if (myRawCooldown <= 0) return 0
+        const startT = Number(myStartTime)
+        const rawCd = Number(myRawCooldown)
+
+        if (rawCd <= 0) return 0
 
         let freezeEvents = []
 
@@ -1043,11 +1046,11 @@ export const useTimelineStore = defineStore('timeline', () => {
                 if (other.type === 'link') {
                     duration = 0.5
                 } else if (other.type === 'ultimate') {
-                    duration = other.animationTime || 0.5
+                    duration = Number(other.animationTime) || 0.5
                 }
 
                 if (duration > 0) {
-                    if (other.startTime + duration <= myStartTime) return
+                    if (other.startTime + duration <= startT) return
 
                     freezeEvents.push({
                         start: other.startTime,
@@ -1062,34 +1065,39 @@ export const useTimelineStore = defineStore('timeline', () => {
         freezeEvents.sort((a, b) => a.start - b.start)
 
         const mergedEvents = []
-        let currentEvent = freezeEvents[0]
-
-        for (let i = 1; i < freezeEvents.length; i++) {
-            const nextEvent = freezeEvents[i]
-
-            if (nextEvent.start < currentEvent.end) {
-                currentEvent.end = Math.max(currentEvent.end, nextEvent.end)
-            } else {
-                mergedEvents.push(currentEvent)
-                currentEvent = nextEvent
+        if (freezeEvents.length > 0) {
+            let currentEvent = freezeEvents[0]
+            for (let i = 1; i < freezeEvents.length; i++) {
+                const nextEvent = freezeEvents[i]
+                if (nextEvent.start < currentEvent.end) {
+                    currentEvent.end = Math.max(currentEvent.end, nextEvent.end)
+                } else {
+                    mergedEvents.push(currentEvent)
+                    currentEvent = nextEvent
+                }
             }
+            mergedEvents.push(currentEvent)
         }
-        mergedEvents.push(currentEvent)
 
-        let currentCdEndTime = myStartTime + myRawCooldown
+        let visualDuration = rawCd
 
         for (const freeze of mergedEvents) {
-            const validStart = Math.max(myStartTime, freeze.start)
+            const validStart = Math.max(startT, freeze.start)
             const validEnd = freeze.end
 
             if (validEnd <= validStart) continue
 
-            if (validStart < currentCdEndTime) {
-                const freezeLength = validEnd - validStart
-                currentCdEndTime += freezeLength
-            }
+            if (validStart >= startT + visualDuration) break
+
+            const freezeLen = validEnd - validStart
+
+            const remaining = (startT + visualDuration) - validStart
+            const reduction = Math.min(freezeLen, remaining)
+
+            visualDuration -= reduction
         }
-        return currentCdEndTime - (myStartTime + myRawCooldown)
+
+        return rawCd - visualDuration
     }
 
     function calculateGaugeData(trackId) {

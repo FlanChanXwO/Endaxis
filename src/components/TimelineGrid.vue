@@ -438,7 +438,6 @@ function hideAlignGuide() {
 function recalcAlignGuide() {
   if (hoveredContext.value) {
     const { action, element, clientX } = hoveredContext.value
-    // 构造一个模拟的 evt 对象，包含 clientX 即可
     updateAlignGuide({ clientX }, action, element)
   }
 }
@@ -464,22 +463,20 @@ function onBackgroundContextMenu(evt) {
 function onActionMouseDown(evt, track, action) {
   evt.stopPropagation()
 
-  // 锁定检查
   if (action.isLocked) {
-    if (evt.button === 0) { // 左键点击虽然不能拖，但可以选择
+    if (evt.button === 0) {
       store.selectAction(action.instanceId)
       ElMessage.warning({ message: '该动作已锁定位置', duration: 1000, grouping: true })
       return
     }
   }
 
-  // 处理对齐操作 (Alt + Click)
   if (isAltDown.value) {
     if (store.selectedActionId && store.selectedActionId !== action.instanceId) {
       const rect = evt.currentTarget.getBoundingClientRect()
       const clickX = evt.clientX - rect.left
       const isClickLeft = clickX < (rect.width / 2)
-      const isShift = isShiftDown.value // 使用响应式状态
+      const isShift = isShiftDown.value
 
       let alignMode = ''
       let msg = ''
@@ -495,7 +492,7 @@ function onActionMouseDown(evt, track, action) {
       const success = store.alignActionToTarget(action.instanceId, alignMode)
       if (success) {
         ElMessage.success(msg)
-        hideAlignGuide() // 点击后立即隐藏
+        hideAlignGuide()
       } else {
         ElMessage.warning('位置未改变')
       }
@@ -503,34 +500,42 @@ function onActionMouseDown(evt, track, action) {
     return
   }
 
-  // 正常选择与拖拽逻辑
   if (store.isLinking) return
   if (evt.button !== 0) return
 
-  wasSelectedOnPress.value = store.multiSelectedIds.has(action.instanceId)
-  hadAnomalySelection.value = (store.selectedAnomalyId !== null)
-
-  if (!store.multiSelectedIds.has(action.instanceId)) {
-    store.selectAction(action.instanceId)
-  }
-
-  isMouseDown.value = true; isDragStarted.value = false
-  movingActionId.value = action.instanceId; movingTrackId.value = track.id
-  initialMouseX.value = evt.clientX; initialMouseY.value = evt.clientY
-
-  dragStartTimes.clear()
-  store.tracks.forEach(t => {
-    t.actions.forEach(a => {
-      if (store.multiSelectedIds.has(a.instanceId)) dragStartTimes.set(a.instanceId, a.startTime)
-    })
-  })
-
+  const clientX = evt.clientX
+  const clientY = evt.clientY
   const rect = evt.currentTarget.getBoundingClientRect()
-  store.setDragOffset(evt.clientX - rect.left)
+  const offset = clientX - rect.left
 
-  window.addEventListener('mousemove', onWindowMouseMove)
-  window.addEventListener('mouseup', onWindowMouseUp)
-  window.addEventListener('blur', onWindowMouseUp)
+  setTimeout(() => {
+    wasSelectedOnPress.value = store.multiSelectedIds.has(action.instanceId)
+    hadAnomalySelection.value = (store.selectedAnomalyId !== null)
+
+    if (!store.multiSelectedIds.has(action.instanceId)) {
+      store.selectAction(action.instanceId)
+    }
+
+    isMouseDown.value = true;
+    isDragStarted.value = false
+    movingActionId.value = action.instanceId;
+    movingTrackId.value = track.id
+    initialMouseX.value = clientX;
+    initialMouseY.value = clientY
+
+    dragStartTimes.clear()
+    store.tracks.forEach(t => {
+      t.actions.forEach(a => {
+        if (store.multiSelectedIds.has(a.instanceId)) dragStartTimes.set(a.instanceId, a.startTime)
+      })
+    })
+
+    store.setDragOffset(offset)
+
+    window.addEventListener('mousemove', onWindowMouseMove)
+    window.addEventListener('mouseup', onWindowMouseUp)
+    window.addEventListener('blur', onWindowMouseUp)
+  }, 0)
 }
 
 function updateDragPosition(clientX) {

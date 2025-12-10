@@ -231,10 +231,6 @@ function updateActionProp(key, value) {
   commitUpdate({ [key]: value })
 }
 
-function updateActionGaugeWithLink(value) {
-  commitUpdate({ gaugeGain: value, teamGaugeGain: value })
-}
-
 function addDamageTick() {
   const currentTicks = targetData.value.damageTicks ? [...targetData.value.damageTicks] : []
   currentTicks.push({ offset: 0, stagger: 0, sp: 0 })
@@ -442,7 +438,7 @@ const relevantConnections = computed(() => {
 
         <div class="form-group compact" v-if="!['execution'].includes(currentSkillType)">
           <label>自身充能</label>
-          <CustomNumberInput :model-value="targetData.gaugeGain" @update:model-value="val => updateActionGaugeWithLink(val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
+          <CustomNumberInput :model-value="targetData.gaugeGain" @update:model-value="val => updateActionProp('gaugeGain', val)" :min="0" :border-color="HIGHLIGHT_COLORS.blue" text-align="center"/>
         </div>
 
         <div class="form-group compact" v-if="currentSkillType === 'skill'">
