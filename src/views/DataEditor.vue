@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -58,14 +58,11 @@ const selectedChar = computed(() => {
 
 // === 生命周期 ===
 
-onMounted(async () => {
-  if (characterRoster.value.length === 0) {
-    await store.fetchGameData()
+watch(characterRoster, (newList) => {
+  if (newList && newList.length > 0 && !selectedCharId.value) {
+    selectedCharId.value = newList[0].id
   }
-  if (characterRoster.value.length > 0) {
-    selectedCharId.value = characterRoster.value[0].id
-  }
-})
+}, { immediate: true })
 
 // === 操作方法 ===
 
