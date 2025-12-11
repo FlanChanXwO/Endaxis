@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { executeFetch } from '@/api/fetchStrategy.js'
 
 const uid = () => Math.random().toString(36).substring(2, 9)
 
@@ -1251,9 +1252,28 @@ export const useTimelineStore = defineStore('timeline', () => {
 
     async function fetchGameData() {
         try {
-            isLoading.value = true; const response = await fetch(import.meta.env.BASE_URL + 'gamedata.json'); if (!response.ok) throw new Error('Failed'); const data = await response.json();
-            characterRoster.value = data.characterRoster.sort((a, b) => (b.rarity || 0) - (a.rarity || 0)); iconDatabase.value = data.ICON_DATABASE; historyStack.value = []; historyIndex.value = -1; commitState();
-        } catch (error) { console.error("Load failed:", error) } finally { isLoading.value = false }
+            isLoading.value = true
+
+            const data = await executeFetch()
+
+            if (data) {
+                if (data.characterRoster) {
+                    characterRoster.value = data.characterRoster.sort((a, b) => (b.rarity || 0) - (a.rarity || 0))
+                }
+                if (data.ICON_DATABASE) {
+                    iconDatabase.value = data.ICON_DATABASE
+                }
+            }
+
+            historyStack.value = []
+            historyIndex.value = -1
+            commitState()
+
+        } catch (error) {
+            console.error("Load failed:", error)
+        } finally {
+            isLoading.value = false
+        }
     }
 
     function exportProject() {
