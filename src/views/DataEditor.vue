@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { executeSave } from '../api/saveStrategy.js'
 
 const store = useTimelineStore()
 const { characterRoster, iconDatabase } = storeToRefs(store)
@@ -349,18 +350,12 @@ function onSkillGaugeInput(event) {
 
 function saveData() {
   characterRoster.value.sort((a, b) => (b.rarity || 0) - (a.rarity || 0));
+
   const dataToSave = {
     ICON_DATABASE: iconDatabase.value,
     characterRoster: characterRoster.value
   }
-  const jsonData = JSON.stringify(dataToSave, null, 2)
-  const blob = new Blob([jsonData], {type: 'application/json'})
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = 'gamedata.json'
-  link.click()
-  URL.revokeObjectURL(link.href)
-  ElMessage.success('gamedata.json 已生成，请覆盖项目文件')
+  executeSave(dataToSave)
 }
 </script>
 
