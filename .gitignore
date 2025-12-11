@@ -13,6 +13,7 @@ dist
 .DS_Store
 local
 .env.local
+.env
 
 deploy.ps1
 # Editor directories and files

@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { executeSave } from '../api/saveStrategy.js'
+import { executeSave } from '@/api/saveStrategy.js'
 
 const store = useTimelineStore()
 const { characterRoster, iconDatabase } = storeToRefs(store)
@@ -387,7 +387,9 @@ function saveData() {
         </div>
       </div>
       <div class="sidebar-footer">
-        <button class="btn-save" @click="saveData">💾 生成并下载 JSON</button>
+        <button class="btn-save" @click="saveData">
+          💾 保存数据 (Save Data)
+        </button>
         <router-link to="/" class="btn-back">↩ 返回排轴器</router-link>
       </div>
     </aside>
