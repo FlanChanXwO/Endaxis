@@ -24,6 +24,7 @@ const props = defineProps({
   isSelected: { type: Boolean, default: false },
   isDimmed: { type: Boolean, default: false },
   isHighlighted: { type: Boolean, default: false },
+  isSelectable: { type: Boolean, default: true },
   isPreview: { type: Boolean, default: false }
 })
 
@@ -62,7 +63,8 @@ const pathData = computed(() => {
     'is-selected': isSelected,
     'is-dimmed': isDimmed,
     'is-highlighted': isHighlighted,
-    'is-preview': isPreview
+    'is-preview': isPreview,
+    'is-selectable': isSelectable
   }" @click.stop="emit('click', $event)" @contextmenu.prevent.stop="emit('contextmenu', $event)">
     <defs>
       <linearGradient :id="gradientId" gradientUnits="userSpaceOnUse" :x1="startPoint.x" :y1="startPoint.y"
@@ -73,8 +75,8 @@ const pathData = computed(() => {
     </defs>
 
     <path :d="pathData" fill="none" :stroke="colors.end" stroke-width="12" class="hover-zone"
-      :class="{ 'is-preview': isPreview }">
-      <title>Left click to select, Del to delete</title>
+      :class="{ 'is-preview': isPreview, 'is-selectable': isSelectable }">
+      <title>左键选中后按 Delete 删除</title>
     </path>
 
     <path :d="pathData" fill="none" :stroke="isSelected ? '#ffffff' : `url(#${gradientId})`" stroke-width="2"
@@ -96,9 +98,9 @@ const pathData = computed(() => {
 
 <style scoped>
 .connector-group {
-  cursor: pointer;
   transition: opacity 0.2s, filter 0.2s;
-
+  cursor: pointer;
+  
   &.is-dimmed {
     opacity: 0.1;
     filter: grayscale(0.8);
@@ -111,7 +113,7 @@ const pathData = computed(() => {
   }
 }
 
-.connector-group.is-highlighted .main-path {
+.connector-group.is-selectable.is-highlighted .main-path {
   stroke-width: 3;
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
 }
@@ -123,9 +125,12 @@ const pathData = computed(() => {
 }
 
 .hover-zone {
-  pointer-events: stroke;
   transition: stroke-opacity 0.2s;
   stroke-opacity: 0;
+
+  &.is-selectable {
+    pointer-events: stroke;
+  }
 
   &.is-preview {
     pointer-events: none;

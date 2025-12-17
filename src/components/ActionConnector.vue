@@ -200,6 +200,7 @@ const onDragTarget = (evt) => {
     :is-selected="isSelected"
     :is-dimmed="isDimmed"
     :is-highlighted="isRelatedToHover"
+    :is-selectable="!connectionHandler.isDragging.value"
     @click="onSelectClick"
     @contextmenu="onContextMenu"
     @drag-start-target="onDragTarget"
