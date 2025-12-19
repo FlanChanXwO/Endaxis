@@ -415,8 +415,8 @@ function handleEffectDrop(effectId) {
       @drag-start="handleActionDragStart" @clear-snap="connectionHandler.clearSnap"
       :isDragging="connectionHandler.isDragging.value"
       :disabled="connectionSourceActionId === props.action.instanceId"
-      v-if="!isGhostMode && !store.isDraggingLink"
-      :show="isSelected || store.hoveredActionId === action.instanceId || (connectionHandler.isDragging.value && connectionSourceActionId !== action.instanceId)" :color="themeColor" />
+      v-if="!isGhostMode && store.hoveredActionId === action.instanceId || connectionHandler.isDragging.value || (connectionHandler.isDragging.value && connectionSourceActionId !== action.instanceId)"
+      :color="themeColor" />
 
     <div v-if="!isGhostMode" class="anomalies-overlay">
       <div v-for="(item, index) in renderableAnomalies" :key="`${item.rowIndex}-${item.colIndex}`"

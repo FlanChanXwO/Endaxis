@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 
 const props = defineProps({
-    show: { type: Boolean, default: false },
+    show: { type: Boolean, default: true },
     color: { type: String, default: '#fff' },
     isDragging: { type: Boolean, default: false },
     disabled: { type: Boolean, default: false }
@@ -121,7 +121,7 @@ const ports = [
             :style="{ '--background-color': color }"
             :class="['link-port', p.class, `port-${p.side}`, { 'active': activePort === p.side }]"
             @mousedown.stop.prevent="onPortMouseDown($event, p)" @mouseenter.stop="onPortMouseEnter($event, p)"
-            @mouseleave.stop="onPortMouseLeave" @mouseup.stop="onPortMouseUp" title="Drag to connect">
+            @mouseleave.stop="onPortMouseLeave" @mouseup.stop="onPortMouseUp" title="拖拽连线">
         </div>
     </div>
 </template>
