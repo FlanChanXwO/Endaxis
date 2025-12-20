@@ -285,6 +285,24 @@ function handleAddCycleBoundary() {
         <span class="label">添加循环分界线</span>
       </div>
 
+      <div class="menu-item has-submenu">
+        <span class="icon">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7" /></svg>
+        </span>
+        <span class="label">在此处切人...</span>
+        <span class="arrow">▶</span>
+
+        <div class="submenu-list">
+          <div v-for="track in store.teamTracksInfo"
+               v-show="track.id"
+               :key="track.id"
+               class="submenu-list-item"
+               @click="store.addSwitchEvent(store.contextMenu.time, track.id); close()">
+            <img :src="track.avatar" class="mini-avatar" />
+            <span class="sub-label">{{ track.name }}</span>
+          </div>
+        </div>
+      </div>
     </template>
 
   </div>
@@ -320,6 +338,12 @@ function handleAddCycleBoundary() {
   max-width: 200px;
 }
 
+.menu-label {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #777;
+}
+
 .menu-item {
   height: 32px;
   padding: 0 12px;
@@ -328,6 +352,7 @@ function handleAddCycleBoundary() {
   align-items: center;
   transition: background 0.1s;
   color: #ccc;
+  position: relative;
 }
 
 .menu-item:hover {
@@ -337,6 +362,11 @@ function handleAddCycleBoundary() {
 
 .menu-item.delete-item:hover {
   background: #ff7875;
+}
+
+.menu-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .menu-item .icon {
@@ -366,21 +396,105 @@ function handleAddCycleBoundary() {
   color: rgba(255, 255, 255, 0.7);
 }
 
-.menu-item.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-
 .divider {
   height: 1px;
   background: #3a3a3a;
   margin: 4px 0;
 }
 
-.menu-label {
-  padding: 4px 12px;
-  font-size: 11px;
-  color: #777;
+.menu-item.has-submenu {
+  justify-content: space-between;
+}
+
+.menu-item .arrow {
+  font-size: 10px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.menu-item.has-submenu:hover .submenu-grid,
+.menu-item.has-submenu:hover .submenu-list {
+  display: grid;
+}
+
+.menu-item.has-submenu:hover .submenu-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.submenu-grid {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: -4px;
+  background: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 6px;
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.5);
+  padding: 4px;
+  grid-template-columns: repeat(3, 30px);
+  grid-template-rows: repeat(3, 30px);
+  gap: 2px;
+  z-index: 100;
+}
+
+.grid-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #888;
+  transition: all 0.1s;
+}
+
+.grid-item:hover {
+  background: #444;
+  color: #fff;
+}
+
+.grid-item.is-active {
+  background: #ffd700;
+  color: #000;
+}
+
+.submenu-list {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: -4px;
+  background: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 6px;
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.5);
+  padding: 4px 0;
+  min-width: 140px;
+  z-index: 100;
+}
+
+.submenu-list-item {
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  color: #ccc;
+}
+
+.submenu-list-item:hover {
+  background: #007fd4;
+  color: #fff;
+}
+
+.mini-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #666;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .color-grid {
@@ -419,58 +533,7 @@ function handleAddCycleBoundary() {
   to { opacity: 1; transform: scale(1); }
 }
 
-.menu-item.has-submenu {
-  position: relative;
-  justify-content: space-between;
-}
-
-.menu-item .arrow {
-  font-size: 10px;
-  color: #666;
-  margin-left: 10px;
-}
-
-.submenu-grid {
-  display: none;
-  position: absolute;
-  left: 100%;
-  top: -4px;
-  background: #2b2b2b;
-  border: 1px solid #444;
-  border-radius: 6px;
-  box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-  padding: 4px;
-  grid-template-columns: repeat(3, 30px);
-  grid-template-rows: repeat(3, 30px);
-  gap: 2px;
-  z-index: 100;
-}
-
-.menu-item.has-submenu:hover .submenu-grid {
-  display: grid;
-}
-
-.grid-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #888;
-  transition: all 0.1s;
-}
-
-.grid-item:hover {
-  background: #444;
-  color: #fff;
-}
-
-.grid-item.is-active {
-  background: #ffd700;
-  color: #000;
-}
-
-.grid-item.spacer {
+.spacer {
   cursor: default;
   pointer-events: none;
 }

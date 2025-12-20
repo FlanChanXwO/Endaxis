@@ -85,10 +85,10 @@ export const useTimelineStore = defineStore('timeline', () => {
     ])
 
     const tracks = ref([
-        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null },
-        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null },
-        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null },
-        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null },
+        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null, gaugeEfficiency: 100 },
+        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null, gaugeEfficiency: 100 },
+        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null, gaugeEfficiency: 100 },
+        { id: null, actions: [], initialGauge: 0, maxGaugeOverride: null, gaugeEfficiency: 100 },
     ])
     const connections = ref([])
     const characterOverrides = ref({})
@@ -183,6 +183,14 @@ export const useTimelineStore = defineStore('timeline', () => {
         return { fromNode, toNode }
     }
 
+    function updateTrackGaugeEfficiency(trackId, value) {
+        const track = tracks.value.find(t => t.id === trackId);
+        if (track) {
+            track.gaugeEfficiency = value;
+            commitState();
+        }
+    }
+
     // ===================================================================================
     // 交互状态
     // ===================================================================================
@@ -204,6 +212,8 @@ export const useTimelineStore = defineStore('timeline', () => {
     const selectedAnomalyId = ref(null)
 
     const selectedCycleBoundaryId = ref(null)
+    const switchEvents = ref([])
+    const selectedSwitchEventId = ref(null)
 
     const multiSelectedIds = ref(new Set())
     const isBoxSelectMode = ref(false)
@@ -273,7 +283,8 @@ export const useTimelineStore = defineStore('timeline', () => {
             systemConstants: systemConstants.value,
             activeEnemyId: activeEnemyId.value,
             customEnemyParams: customEnemyParams.value,
-            cycleBoundaries: cycleBoundaries.value
+            cycleBoundaries: cycleBoundaries.value,
+            switchEvents: switchEvents.value
         }))
     }
 
@@ -290,6 +301,7 @@ export const useTimelineStore = defineStore('timeline', () => {
             customEnemyParams.value = { ...customEnemyParams.value, ...data.customEnemyParams }
         }
         cycleBoundaries.value = data.cycleBoundaries ? JSON.parse(JSON.stringify(data.cycleBoundaries)) : []
+        switchEvents.value = data.switchEvents ? JSON.parse(JSON.stringify(data.switchEvents)) : []
         clearSelection()
     }
 
@@ -702,6 +714,30 @@ export const useTimelineStore = defineStore('timeline', () => {
         }
     }
 
+    function addSwitchEvent(time, characterId) {
+        switchEvents.value.push({
+            id: `sw_${uid()}`,
+            time: time,
+            characterId: characterId
+        })
+        commitState()
+    }
+
+    function updateSwitchEvent(id, time) {
+        const event = switchEvents.value.find(e => e.id === id)
+        if (event) {
+            event.time = time
+        }
+    }
+
+    function selectSwitchEvent(id) {
+        const isSame = (selectedSwitchEventId.value === id)
+        clearSelection()
+        if (!isSame) {
+            selectedSwitchEventId.value = id
+        }
+    }
+
     function selectCycleBoundary(id) {
         const isSame = (selectedCycleBoundaryId.value === id)
         clearSelection()
@@ -737,6 +773,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         selectedConnectionId.value = null
         selectedAnomalyId.value = null
         selectedCycleBoundaryId.value = null
+        selectedSwitchEventId.value = null
         multiSelectedIds.value.clear()
         selectedLibrarySkillId.value = null
     }
@@ -770,6 +807,13 @@ export const useTimelineStore = defineStore('timeline', () => {
                 itemsToPull.push({ time: action.startTime, amount });
             }
         });
+
+        if (selectedSwitchEventId.value) {
+            switchEvents.value = switchEvents.value.filter(s => s.id !== selectedSwitchEventId.value)
+            selectedSwitchEventId.value = null
+            commitState()
+            return { total: 1 }
+        }
 
         if (selectedCycleBoundaryId.value) {
             cycleBoundaries.value = cycleBoundaries.value.filter(b => b.id !== selectedCycleBoundaryId.value);
@@ -1447,6 +1491,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     function calculateGaugeData(trackId) {
         const track = tracks.value.find(t => t.id === trackId);
         if (!track) return [];
+        const efficiency = ((track.gaugeEfficiency ?? 100)) / 100;
         const charInfo = characterRoster.value.find(c => c.id === trackId);
         if (!charInfo) return [];
 
@@ -1489,10 +1534,9 @@ export const useTimelineStore = defineStore('timeline', () => {
                     }
                     // 获得能量
                     if (action.gaugeGain > 0) {
-                        // 计算受时停影响后的能量实际到账时间
                         const triggerTime = getShiftedEndTime(action.startTime, action.duration);
                         if (!isBlocked(triggerTime)) {
-                            events.push({ time: triggerTime, change: action.gaugeGain });
+                            events.push({ time: triggerTime, change: action.gaugeGain * efficiency });
                         }
                     }
                 }
@@ -1500,7 +1544,7 @@ export const useTimelineStore = defineStore('timeline', () => {
                 else if (action.teamGaugeGain > 0 && canAcceptTeamGauge) {
                     const triggerTime = getShiftedEndTime(action.startTime, action.duration);
                     if (!isBlocked(triggerTime)) {
-                        events.push({ time: triggerTime, change: action.teamGaugeGain });
+                        events.push({ time: triggerTime, change: action.teamGaugeGain * efficiency });
                     }
                 }
             });
@@ -1531,8 +1575,8 @@ export const useTimelineStore = defineStore('timeline', () => {
     const STORAGE_KEY = 'endaxis_autosave'
 
     function initAutoSave() {
-        watch([tracks, connections, characterOverrides, systemConstants, scenarioList, activeScenarioId, activeEnemyId, customEnemyParams, cycleBoundaries],
-            ([newTracks, newConns, newOverrides, newSys, newScList, newActiveId, newEnemyId, newCustomParams, newBoundaries]) => {
+        watch([tracks, connections, characterOverrides, systemConstants, scenarioList, activeScenarioId, activeEnemyId, customEnemyParams, cycleBoundaries, switchEvents],
+            ([newTracks, newConns, newOverrides, newSys, newScList, newActiveId, newEnemyId, newCustomParams, newBoundaries, newSwEvents]) => {
 
                 if (isLoading.value) return
 
@@ -1547,7 +1591,8 @@ export const useTimelineStore = defineStore('timeline', () => {
                         systemConstants: newSys,
                         activeEnemyId: newEnemyId,
                         customEnemyParams: newCustomParams,
-                        cycleBoundaries: newBoundaries
+                        cycleBoundaries: newBoundaries,
+                        switchEvents: newSwEvents
                     }
                 }
 
@@ -1598,6 +1643,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         connections.value = [];
         characterOverrides.value = {};
         cycleBoundaries.value = [];
+        switchEvents.value = [];
 
         systemConstants.value = { ...DEFAULT_SYSTEM_CONSTANTS };
 
@@ -1752,7 +1798,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         MAX_SCENARIOS,
         systemConstants, isLoading, characterRoster, iconDatabase, tracks, connections, activeTrackId, timelineScrollLeft, globalDragOffset, draggingSkillData,
         selectedActionId, selectedLibrarySkillId, multiSelectedIds, clipboard, showCursorGuide, isBoxSelectMode, cursorCurrentTime, cursorPosition, snapStep,
-        selectedAnomalyId, setSelectedAnomalyId,
+        selectedAnomalyId, setSelectedAnomalyId, updateTrackGaugeEfficiency,
         teamTracksInfo, activeSkillLibrary, timeBlockWidth, ELEMENT_COLORS, getActionPositionInfo, getIncomingConnections, getCharacterElementColor, isActionSelected, hoveredActionId, setHoveredAction,
         fetchGameData, exportProject, importProject, exportShareString, importShareString, TOTAL_DURATION, selectTrack, changeTrackOperator, clearTrack, selectLibrarySkill, updateLibrarySkill, selectAction, updateAction,
         addSkillToTrack, setDraggingSkill, setDragOffset, setScrollLeft, calculateGlobalSpData, calculateGaugeData, calculateGlobalStaggerData, updateTrackInitialGauge, updateTrackMaxGauge,
@@ -1763,6 +1809,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         connectionMap, actionMap, effectsMap, getConnectionById, resolveNode, getNodesOfConnection, connectionDragState, connectionSnapState, createConnection,
         cycleBoundaries, selectedCycleBoundaryId, addCycleBoundary, updateCycleBoundary, selectCycleBoundary,
         contextMenu, openContextMenu, closeContextMenu,
+        switchEvents, selectedSwitchEventId, addSwitchEvent, updateSwitchEvent, selectSwitchEvent,
         toggleActionLock, toggleActionDisable, setActionColor,
         globalExtensions, getShiftedEndTime, getCleanStartTime, refreshAllActionShifts,
         enemyDatabase, activeEnemyId, applyEnemyPreset, ENEMY_TIERS, enemyCategories,

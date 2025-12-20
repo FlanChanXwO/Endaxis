@@ -41,12 +41,14 @@ const initialMouseY = ref(0)
 const dragThreshold = 5
 const wasSelectedOnPress = ref(false)
 const wasCycleSelectedOnPress = ref(false)
+const wasSwitchSelectedOnPress = ref(false)
 const dragStartTimes = new Map()
 const hadAnomalySelection = ref(false)
 const isAltDown = ref(false)
 const isShiftDown = ref(false)
 const hoveredContext = ref(null)
 const draggingCycleBoundaryId = ref(null)
+const draggingSwitchEventId = ref(null)
 
 // === 边缘自动滚动相关状态 ===
 const autoScrollSpeed = ref(0)
@@ -187,28 +189,45 @@ function getRarityBaseColor(rarity) {
 
 const operationMarkers = computed(() => {
   let rawMarkers = []
+  const widthUnit = TIME_BLOCK_WIDTH.value
+
   store.tracks.forEach((track, index) => {
+    if (!track.id) return
     const keyNum = index + 1
+
     track.actions.forEach(action => {
       if ((action.triggerWindow || 0) < 0) return
-      let label = '', isHold = false, customClass = ''
 
+      let label = '', isHold = false, customClass = ''
       if (action.type === 'skill') {
         label = `${keyNum}`; customClass = 'op-skill'
       } else if (action.type === 'link') {
         label = 'E'; customClass = 'op-link'
       } else if (action.type === 'ultimate') {
         label = `${keyNum} (Hold)`; isHold = true; customClass = 'op-ultimate'
-      } else {
-        return
-      }
+      } else return
 
       rawMarkers.push({
         id: `op-${action.instanceId}`,
-        left: action.startTime * TIME_BLOCK_WIDTH.value,
+        left: (action.startTime || 0) * widthUnit,
         width: isHold ? null : 24,
-        right: (action.startTime * TIME_BLOCK_WIDTH.value) + (isHold ? (action.duration * TIME_BLOCK_WIDTH.value) : 24),
+        right: ((action.startTime || 0) * widthUnit) + (isHold ? ((action.duration || 0) * widthUnit) : 24),
         label, isHold, customClass,
+        top: 0, height: 14, fontSize: 9
+      })
+    })
+
+    const mySwitchEvents = (store.switchEvents || []).filter(sw => sw.characterId === track.id)
+
+    mySwitchEvents.forEach(sw => {
+      rawMarkers.push({
+        id: `op-sw-${sw.id}`,
+        left: sw.time * widthUnit,
+        width: 24,
+        right: (sw.time * widthUnit) + 24,
+        label: `F${keyNum}`,
+        isHold: false,
+        customClass: 'op-switch',
         top: 0, height: 14, fontSize: 9
       })
     })
@@ -667,7 +686,40 @@ function performAutoScroll() {
   autoScrollRaf = requestAnimationFrame(performAutoScroll)
 }
 
+function onSwitchMarkerMouseDown(evt, id) {
+  evt.stopPropagation()
+  evt.preventDefault()
+  if (evt.button !== 0) return
+
+  wasSwitchSelectedOnPress.value = (store.selectedSwitchEventId === id)
+
+  if (!wasSwitchSelectedOnPress.value) {
+    store.selectSwitchEvent(id)
+  }
+  draggingSwitchEventId.value = id
+  initialMouseX.value = evt.clientX
+  initialMouseY.value = evt.clientY
+  isDragStarted.value = false
+  isMouseDown.value = true
+
+  document.body.classList.add('is-dragging')
+
+  window.addEventListener('mousemove', onWindowMouseMove)
+  window.addEventListener('mouseup', onWindowMouseUp)
+  window.addEventListener('blur', onWindowMouseUp)
+}
+
 function onWindowMouseMove(evt) {
+  if (draggingSwitchEventId.value) {
+    if (!isDragStarted.value) {
+      const dist = Math.sqrt(Math.pow(evt.clientX - initialMouseX.value, 2) + Math.pow(evt.clientY - initialMouseY.value, 2))
+      if (dist > dragThreshold) isDragStarted.value = true; else return
+    }
+    let newTime = calculateTimeFromEvent(evt, 0.1)
+    if (newTime > store.TOTAL_DURATION) newTime = store.TOTAL_DURATION
+    store.updateSwitchEvent(draggingSwitchEventId.value, newTime)
+    return
+  }
   if (draggingCycleBoundaryId.value) {
     if (!isDragStarted.value) {
       const dist = Math.sqrt(Math.pow(evt.clientX - initialMouseX.value, 2) + Math.pow(evt.clientY - initialMouseY.value, 2))
@@ -728,6 +780,26 @@ function onWindowMouseUp(event) {
   autoScrollSpeed.value = 0
   if (autoScrollRaf) { cancelAnimationFrame(autoScrollRaf); autoScrollRaf = null }
 
+  if (draggingSwitchEventId.value) {
+    if (!isDragStarted.value && wasSwitchSelectedOnPress.value) {
+      store.selectSwitchEvent(draggingSwitchEventId.value)
+    }
+
+    if (isDragStarted.value) {
+      store.commitState()
+    }
+
+    isDragStarted.value = false
+    draggingSwitchEventId.value = null
+    document.body.classList.remove('is-dragging')
+    window.removeEventListener('mousemove', onWindowMouseMove)
+    window.removeEventListener('mouseup', onWindowMouseUp)
+    window.removeEventListener('blur', onWindowMouseUp)
+    isMouseDown.value = false
+
+    return
+  }
+
   if (draggingCycleBoundaryId.value) {
 
     if (!isDragStarted.value && wasCycleSelectedOnPress.value) {
@@ -785,7 +857,7 @@ function handleKeyDown(event) {
   const target = event.target
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
 
-  const hasSelection = store.selectedActionId || store.multiSelectedIds.size > 0 || store.selectedConnectionId || store.selectedCycleBoundaryId
+  const hasSelection = store.selectedActionId || store.multiSelectedIds.size > 0 || store.selectedConnectionId || store.selectedCycleBoundaryId || store.selectedSwitchEventId
   if (!hasSelection) return
 
   if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -1045,6 +1117,20 @@ onUnmounted(() => {
                 @contextmenu.prevent.stop="onActionContextMenu($event, action)"
                 :class="{ 'is-moving': isDragStarted && store.isActionSelected(action.instanceId) }"
               />
+            </div>
+            <div class="switch-marker-layer">
+              <div v-for="sw in store.switchEvents.filter(s => s.characterId === track.id)"
+                   :key="sw.id"
+                   class="switch-tag"
+                   :class="{ 'is-selected': sw.id === store.selectedSwitchEventId, 'is-dragging': sw.id === draggingSwitchEventId }"
+                   :style="{ left: `${sw.time * TIME_BLOCK_WIDTH}px` }"
+                   @mousedown.stop="onSwitchMarkerMouseDown($event, sw.id)">
+
+                <div class="tag-avatar">
+                  <img :src="store.characterRoster.find(c => c.id === sw.characterId)?.avatar" />
+                </div>
+                <div class="tag-time">{{ sw.time }}s</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1556,6 +1642,13 @@ onUnmounted(() => {
   z-index: 2;
 }
 
+.key-cap.op-switch {
+  background: rgba(211, 173, 255, 0.2);
+  border-color: #d3adff;
+  color: #d3adff;
+  width: 28px !important;
+}
+
 .key-cap.is-hold {
   justify-content: center;
   padding: 0 4px;
@@ -1988,6 +2081,43 @@ onUnmounted(() => {
   100% { opacity: 0.4; transform: scale(1); }
 }
 
+/* ==========================================================================
+   12. Switch Marker Styles
+   ========================================================================== */
+.switch-marker-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+}
+.switch-tag {
+  position: absolute; top: -12px;
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: auto; cursor: col-resize; z-index: 30; transform: translateX(-50%); transition: transform 0.1s;
+}
+.switch-tag.is-dragging {
+  transition: none;
+}
+.tag-avatar {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid #ffd700;
+  background: #222; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.tag-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.tag-time {
+  font-size: 9px;
+  color: #ffd700;
+  font-weight: bold;
+  background: transparent; /* 改为透明 */
+  padding: 0 2px;
+  border-radius: 2px;
+  margin-top: 2px;
+  /* 如果觉得透明后文字不清晰，可以加个文字阴影 */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.switch-tag.is-selected .tag-avatar {
+  border-color: #fff; box-shadow: 0 0 8px #fff;
+}
+:global(body.is-dragging) {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
 .guide-line-vertical {
   position: absolute;
   top: -100px;

@@ -66,44 +66,35 @@ function hexToRgba(hex, alpha) {
 }
 
 function getSkillThemeColor(skill) {
-  // 1. 特殊类型优先
   if (skill.type === 'link') return store.getColor('link')
   if (skill.type === 'execution') return store.getColor('execution')
   if (skill.type === 'attack') return store.getColor('physical')
 
-  // 2. 自身属性 (如果有)
   if (skill.element) {
     return store.getColor(skill.element)
   }
 
-  // 3. 继承当前选中干员的属性
   if (activeCharacter.value?.element) {
     return store.getColor(activeCharacter.value.element)
   }
 
-  // 4. 默认
   return store.getColor('default')
 }
 
 function onNativeDragStart(evt, skill) {
-  // 创建 Ghost 元素
   const ghost = document.createElement('div');
   ghost.id = 'custom-drag-ghost';
   ghost.textContent = skill.name;
 
-  // 计算尺寸
   const duration = Number(skill.duration) || 1;
   const realWidth = duration * store.timeBlockWidth;
 
-  // 获取颜色
   const themeColor = getSkillThemeColor(skill);
 
-  // 应用样式 (复刻 ActionItem.vue 的视觉风格)
   Object.assign(ghost.style, {
     position: 'absolute', top: '-9999px', left: '-9999px',
     width: `${realWidth}px`, height: '50px',
 
-    // 视觉核心：同色系虚线框 + 半透明背景 + 光晕
     border: `2px dashed ${themeColor}`,
     backgroundColor: hexToRgba(themeColor, 0.2),
     color: '#ffffff',
@@ -138,6 +129,18 @@ function onNativeDragEnd() {
   store.setDraggingSkill(null)
   document.body.classList.remove('is-lib-dragging')
 }
+
+const gaugeEfficiencyValue = computed({
+  get: () => {
+    if (!activeTrack.value) return 100;
+    return activeTrack.value.gaugeEfficiency ?? 100;
+  },
+  set: (val) => {
+    if (store.activeTrackId) {
+      store.updateTrackGaugeEfficiency(store.activeTrackId, val)
+    }
+  }
+})
 </script>
 
 <template>
@@ -150,7 +153,7 @@ function onNativeDragEnd() {
 
       <div class="setting-row-group">
         <div class="setting-label-row">
-          <span class="label-text">初始充能 (Initial)</span>
+          <span class="label-text">初始充能</span>
           <span class="value-text">{{ initialGaugeValue }}</span>
         </div>
         <div class="setting-control-row">
@@ -175,7 +178,7 @@ function onNativeDragEnd() {
 
       <div class="setting-row-group">
         <div class="setting-label-row">
-          <span class="label-text">充能上限 (Max)</span>
+          <span class="label-text">充能上限</span>
           <span class="value-text" style="color: #ffd700;">{{ maxGaugeValue }}</span>
         </div>
         <div class="setting-control-row">
@@ -193,6 +196,34 @@ function onNativeDragEnd() {
               :min="1"
               :max="300"
               active-color="#ffd700"
+              class="gauge-input"
+          />
+        </div>
+      </div>
+
+      <hr class="separator"/>
+
+      <div class="setting-row-group">
+        <div class="setting-label-row">
+          <span class="label-text">充能效率</span>
+          <span class="value-text" style="color: #52c41a;">{{ gaugeEfficiencyValue }}%</span>
+        </div>
+        <div class="setting-control-row">
+          <el-slider
+              v-model="gaugeEfficiencyValue"
+              :min="0"
+              :max="300"
+              :step="0.1"
+              :show-tooltip="false"
+              size="small"
+              class="gauge-slider slider-green"
+          />
+          <CustomNumberInput
+              v-model="gaugeEfficiencyValue"
+              :min="0"
+              :max="300"
+              suffix="%"
+              active-color="#52c41a"
               class="gauge-input"
           />
         </div>
@@ -259,4 +290,8 @@ function onNativeDragEnd() {
 .skill-item:active { cursor: grabbing; }
 .skill-item:hover { background-color: #5a5a5a; border-color: #999; }
 .skill-item.is-selected { border-color: #ffd700; color: #ffd700; background-color: #4a4a3a; box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+
+.slider-green { --el-slider-main-bg-color: #52c41a; }
+:deep(.slider-green .el-slider__bar) { background-color: #52c41a; }
+:deep(.slider-green .el-slider__button) { border-color: #52c41a; }
 </style>
