@@ -5,7 +5,8 @@ const props = defineProps({
     show: { type: Boolean, default: true },
     color: { type: String, default: '#fff' },
     isDragging: { type: Boolean, default: false },
-    disabled: { type: Boolean, default: false }
+    disabled: { type: Boolean, default: false },
+    canStart: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['drag-start', 'drop', 'snap', 'clear-snap'])
@@ -83,6 +84,9 @@ function onOverlayMouseMove(evt) {
 }
 
 function onPortMouseEnter(evt, port) {
+    if (!props.canStart || props.disabled) {
+        return
+    }
     activePort.value = port.side
     isOverPort.value = true
     if (props.isDragging) {
@@ -98,6 +102,9 @@ function onPortMouseLeave() {
 }
 
 function onPortMouseDown(evt) {
+    if (!props.canStart || props.disabled) {
+        return
+    }
     emit('drag-start', { x: evt.clientX, y: evt.clientY }, activePort.value)
 }
 
@@ -119,7 +126,7 @@ const ports = [
         @mousemove.stop="onOverlayMouseMove" @mouseup.stop="onOverlayMouseUp" @mouseleave.stop="onOverlayMouseLeave">
         <div v-for="p in ports" :key="p.side" :ref="el => portRefs[p.side] = el"
             :style="{ '--background-color': color }"
-            :class="['link-port', p.class, `port-${p.side}`, { 'active': activePort === p.side }]"
+            :class="['link-port', p.class, `port-${p.side}`, { 'active': activePort === p.side }, { 'disabled': disabled }]"
             @mousedown.stop.prevent="onPortMouseDown($event, p)" @mouseenter.stop="onPortMouseEnter($event, p)"
             @mouseleave.stop="onPortMouseLeave" @mouseup.stop="onPortMouseUp" title="拖拽连线">
         </div>
@@ -147,8 +154,9 @@ const ports = [
     }
 
     &.disabled {
-        opacity: 0.5;
+        opacity: 0.1;
         pointer-events: none;
+        cursor: default;
     }
 }
 
@@ -160,6 +168,10 @@ const ports = [
     border-radius: 50%;
     cursor: crosshair;
     pointer-events: auto;
+
+    &.disabled {
+        pointer-events: none;
+    }
 
     &:hover {
         transform: scale(1.2);

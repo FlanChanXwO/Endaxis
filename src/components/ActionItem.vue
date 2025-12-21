@@ -291,6 +291,25 @@ const renderableAnomalies = computed(() => {
   return resultRows
 })
 
+const showPorts = computed(() => {
+  if (isGhostMode.value) {
+    return false
+  }
+  if (connectionHandler.isDragging.value) {
+    if (store.hoveredActionId === props.action.instanceId && props.action.instanceId !== connectionHandler.state.value.sourceId) {
+      return true
+    }
+    return false
+  } else if (store.hoveredActionId === props.action.instanceId && connectionHandler.toolEnabled.value) {
+    return true
+  }
+  return false
+})
+
+const isActionValidConnectionTarget = computed(() => {
+  return connectionHandler.isNodeValid(props.action.instanceId)
+})
+
 function onIconClick(evt, item, flatIndex) {
   evt.stopPropagation()
   store.selectAnomaly(props.action.instanceId, item.rowIndex, item.colIndex)
@@ -311,7 +330,7 @@ function handleActionDragStart(startPos, port) {
 }
 
 function handleEffectDragStart(event, effectId) {
-  if (connectionHandler.isDragging.value) {
+  if (!connectionHandler.toolEnabled.value || connectionHandler.isDragging.value) {
     return
   }
   const rect = event.target.getBoundingClientRect()
@@ -320,6 +339,9 @@ function handleEffectDragStart(event, effectId) {
 
 function handleEffectSnap(event, effectId) {
   if (connectionSourceActionId.value !== props.action.instanceId) {
+    if (!connectionHandler.isNodeValid(effectId)) {
+      return
+    }
     const rect = event.target.getBoundingClientRect()
     connectionHandler.snapTo(effectId, 'left', getRectPos(rect, 'left'))
   }
@@ -332,6 +354,7 @@ function handleEffectDrop(effectId) {
 
 <template>
   <div :id="`action-${action.instanceId}`" ref="actionElRef" class="action-item-wrapper"
+       :class="{ 'is-link-target-invalid': !isActionValidConnectionTarget && connectionSourceActionId !== action.instanceId }"
        @mouseenter="store.setHoveredAction(action.instanceId)"
        @mouseleave="store.setHoveredAction(null)"
        :style="style"
@@ -402,7 +425,7 @@ function handleEffectDrop(effectId) {
       </svg>
     </div>
 
-    <div v-if="!isGhostMode" class="action-item-content drag-handle">
+    <div v-if="!isGhostMode" class="action-item-content drag-handle" :class="{ 'is-link-target-invalid': !isActionValidConnectionTarget && connectionSourceActionId !== action.instanceId }">
       {{ action.name }}
       <div v-if="animationTimeWidth > 0"
            class="animation-phase-overlay"
@@ -413,8 +436,9 @@ function handleEffectDrop(effectId) {
     <ActionLinkPorts @drop="handleConnectionDrop" @snap="handleConnectionSnap"
       @drag-start="handleActionDragStart" @clear-snap="connectionHandler.clearSnap"
       :isDragging="connectionHandler.isDragging.value"
-      :disabled="connectionSourceActionId === props.action.instanceId"
-      v-if="!isGhostMode && store.hoveredActionId === action.instanceId || connectionHandler.isDragging.value || (connectionHandler.isDragging.value && connectionSourceActionId !== action.instanceId)"
+      :disabled="!isActionValidConnectionTarget"
+      :canStart="connectionHandler.toolEnabled.value"
+      v-if="showPorts"
       :color="themeColor" />
 
     <div v-if="!isGhostMode" class="anomalies-overlay">
@@ -423,7 +447,7 @@ function handleEffectDrop(effectId) {
 
         <div :id="`anomaly-${action.instanceId}-${index}`"
              class="anomaly-icon-box"
-             :class="{ 'is-link-target': connectionHandler.isDragging.value && connectionSourceActionId !== action.instanceId }"
+             :class="{ 'is-linking': connectionHandler.isDragging.value, 'is-link-target-valid': connectionHandler.isNodeValid(item.data._id) }"
              @mousedown.stop="handleEffectDragStart($event, item.data._id)"
              @mouseover.stop="handleEffectSnap($event, item.data._id)"
              @mouseup.stop="handleEffectDrop(item.data._id)"
@@ -483,7 +507,13 @@ function handleEffectDrop(effectId) {
   transition: transform 0.1s, border-color 0.1s, box-shadow 0.2s;
 }
 .anomaly-icon-box:hover { border-color: #ffd700; transform: scale(1.2); z-index: 20; }
-.anomaly-icon-box.is-link-target {
+.anomaly-icon-box.is-linking {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.anomaly-icon-box.is-linking.is-link-target-valid {
+  opacity: 1;
+  pointer-events: auto;
   border-color: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
   transform: scale(1.1); animation: pulse-target 1s infinite; z-index: 100;
 }
@@ -509,6 +539,12 @@ function handleEffectDrop(effectId) {
 }
 .mute-icon {
   right: 2px;
+}
+
+.action-item-content {
+  &.is-link-target-invalid {
+    opacity: 0.5;
+  }
 }
 
 /* 伤害节点样式 */

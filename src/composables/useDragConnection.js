@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 export function useDragConnection() {
     const store = useTimelineStore()
 
-    const { connectionDragState, connectionSnapState } = storeToRefs(store)
+    const { connectionDragState, connectionSnapState, enableConnectionTool, validConnectionTargetIds, actionMap, effectsMap, connections, toggleConnectionTool } = storeToRefs(store)
     const isDragging = computed(() => {
         return connectionDragState.value.isDragging
     })
@@ -28,6 +28,32 @@ export function useDragConnection() {
         }
     }
 
+    function calculateValidTargets(sourceId) {
+        const validSet = new Set()
+
+        for (const action of actionMap.value.values()) {
+            console.log(action)
+            if (validateConnection(sourceId, action.id)) {
+                validSet.add(action.id)
+            }
+        }
+
+        for (const effect of effectsMap.value.values()) {
+            if (validateConnection(sourceId, effect.id)) {
+                validSet.add(effect.id)
+            }
+        }
+
+        validConnectionTargetIds.value = validSet
+    }
+
+    function isNodeValid(targetId) {
+        if (!isDragging.value) {
+            return true
+        }
+        return validConnectionTargetIds.value.has(targetId)
+    }
+
     function startDrag(payload) {
         connectionDragState.value = {
             isDragging: true,
@@ -37,10 +63,13 @@ export function useDragConnection() {
             startPoint: { x: payload.startX || 0, y: payload.startY || 0 },
             sourcePort: payload.sourcePort,
         }
+
+        calculateValidTargets(payload.sourceId)
+
         clearSnap()
     }
 
-    function handleLinkDrop(fromNode, toNode, targetPort) {
+    function handleLinkDrop(fromNode, toNode, targetPort, connectionData) {
         const state = connectionDragState.value
 
         let isConsumption = false
@@ -52,7 +81,73 @@ export function useDragConnection() {
             }
         }
 
-        store.createConnection(fromNode, toNode, state.sourcePort, targetPort, isConsumption)
+        store.createConnection(state.sourcePort, targetPort, isConsumption, connectionData)
+    }
+
+    function validateConnection(fromId, toId) {
+        if (!fromId || !toId || fromId === toId) {
+            return false
+        }
+
+        const fromNode = store.resolveNode(fromId)
+        const toNode = store.resolveNode(toId)
+
+        if (!fromNode || !toNode) {
+            return false
+        }
+
+        let from = null
+        let to = null
+        let fromEffectIndex = null
+        let toEffectIndex = null
+        let fromEffectId = null
+        let toEffectId = null
+
+        let fromActionId = null
+        let toActionId = null
+
+        if (fromNode.type === 'action') {
+            from = fromNode.id
+            fromActionId = fromNode.id
+        } else if (fromNode.type === 'effect') {
+            from = fromNode.actionId
+            fromEffectId = fromNode.id
+            fromEffectIndex = fromNode.flatIndex
+            fromActionId = fromNode.actionId
+        }
+
+        if (toNode.type === 'action') {
+            to = toNode.id
+            toActionId = toNode.id
+        } else if (toNode.type === 'effect') {
+            to = toNode.actionId
+            toEffectId = toNode.id
+            toEffectIndex = toNode.flatIndex
+            toActionId = toNode.actionId
+        }
+
+        if (fromActionId === toActionId) {
+            return false
+        }
+
+        const exists = connections.value.some(c =>
+            c.from === from && c.to === to &&
+            (c.fromEffectId ? c.fromEffectId === fromEffectId : c.fromEffectIndex === fromEffectIndex) &&
+            (c.toEffectId ? c.toEffectId === toEffectId : c.toEffectIndex === toEffectIndex)
+        )
+
+        if (exists) {
+            return false
+        }
+
+        return {
+            from,
+            to,
+            fromEffectIndex,
+            toEffectIndex,
+            fromEffectId,
+            toEffectId,
+        }
     }
 
     function endDrag(targetId = null, targetPort = null) {
@@ -74,12 +169,9 @@ export function useDragConnection() {
         const toNode = store.resolveNode(finalTargetId)
 
         if (fromNode && toNode) {
-            let fromActionId = fromNode.type === 'effect' ? fromNode.actionId : fromNode.id
-            let toActionId = toNode.type === 'effect' ? toNode.actionId : toNode.id
-
-            // 源节点和目标节点不一致时创建连接
-            if (finalTargetId && finalTargetId !== state.sourceId && fromActionId !== toActionId) {
-                handleLinkDrop(fromNode, toNode, finalPort)
+            const connectionData = validateConnection(state.sourceId, finalTargetId)
+            if (connectionData) {
+                handleLinkDrop(fromNode, toNode, finalPort, connectionData)
             }
         }
 
@@ -126,10 +218,12 @@ export function useDragConnection() {
 
         connectionDragState.value.isDragging = false;
         connectionDragState.value.sourceId = null;
+        validConnectionTargetIds.value = new Set()
     }
 
     return {
         isDragging,
+        toolEnabled: readonly(enableConnectionTool),
         state: readonly(connectionDragState),
         snapState: readonly(connectionSnapState),
         snapTo,
@@ -137,6 +231,8 @@ export function useDragConnection() {
         newConnectionFrom,
         moveConnectionEnd,
         endDrag,
-        cancelDrag
+        cancelDrag,
+        validateConnection,
+        isNodeValid
     }
 }
