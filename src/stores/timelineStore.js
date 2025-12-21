@@ -1058,28 +1058,21 @@ export const useTimelineStore = defineStore('timeline', () => {
 
         let newStartTime = sourceAction.startTime
 
+        // 计算对齐后的渲染位置
         switch (alignMode) {
-            case 'RL': // [前接]
-                newStartTime = tStart - sDur
-                break
-
-            case 'LR': // [后接]
-                newStartTime = tEnd + sourceTw
-                break
-
-            case 'LL': // [左对齐]
-                newStartTime = tStart + sourceTw
-                break
-
-            case 'RR': // [右对齐]
-                newStartTime = tEnd - sDur
-                break
+            case 'RL': newStartTime = tStart - sDur; break // [前接]
+            case 'LR': newStartTime = tEnd + sourceTw; break // [后接]
+            case 'LL': newStartTime = tStart + sourceTw; break // [左对齐]
+            case 'RR': newStartTime = tEnd - sDur; break // [右对齐]
         }
 
         newStartTime = Math.round(newStartTime * 10) / 10
 
         if (sourceAction.startTime !== newStartTime) {
             sourceAction.startTime = newStartTime
+            sourceAction.logicalStartTime = newStartTime
+            refreshAllActionShifts()
+
             tracks.value[sourceInfo.trackIndex].actions.sort((a, b) => a.startTime - b.startTime)
             commitState()
             return true
