@@ -11,6 +11,26 @@ const props = defineProps({
 
 const store = useTimelineStore()
 const connectionHandler = useDragConnection()
+const TYPE_SHORTHAND = {
+  'attack': 'A', 'execution': 'X', 'skill': 'C', 'link': 'E', 'ultimate': 'U'
+}
+
+const isVariant = computed(() => {
+  return props.action.id && props.action.id.includes('_variant_')
+})
+
+const secWidth = computed(() => store.timeBlockWidth)
+
+const displayLabel = computed(() => {
+  const name = props.action.name || ''
+  const type = props.action.type
+  const width = secWidth.value
+
+  const suffix = isVariant.value ? '*' : ''
+
+  if (width >= 30) return `${name}${suffix}`
+  return `${TYPE_SHORTHAND[type] || '?'}${suffix}`
+})
 
 const isSelected = computed(() => store.isActionSelected(props.action.instanceId))
 
@@ -424,7 +444,7 @@ function handleEffectDrop(effectId) {
     </div>
 
     <div v-if="!isGhostMode" class="action-item-content drag-handle" :class="{ 'is-link-target-invalid': !isActionValidConnectionTarget && connectionSourceActionId !== action.instanceId }">
-      {{ action.name }}
+      {{ displayLabel }}
       <div v-if="animationTimeWidth > 0"
            class="animation-phase-overlay"
            :style="{ width: `${animationTimeWidth}px` }">

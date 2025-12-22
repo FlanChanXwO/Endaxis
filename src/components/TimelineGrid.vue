@@ -1076,7 +1076,7 @@ onUnmounted(() => {
           <span class="btn-text">{{ store.snapStep < 0.05 ? '1f' : '0.1s' }}</span>
         </button>
 
-        <button class="mini-tool-btn" :class="{ 'is-active': connectionHandler.toolEnabled.value }" @click="store.toggleConnectionTool" title="连接工具 (Alt+L)">
+        <button class="mini-tool-btn" :class="{ 'is-active': connectionHandler.toolEnabled.value }" @click="store.toggleConnectionTool" title="连线工具 (Alt+L)">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M5 4h14c3 0 3 8 0 8h-14c-3 0-3 8 0 8h14" /><circle cx="5" cy="4" r="2" fill="currentColor"/><circle cx="19" cy="20" r="2" fill="currentColor"/></svg>
         </button>
       </div>

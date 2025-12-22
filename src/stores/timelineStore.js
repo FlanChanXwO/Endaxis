@@ -319,7 +319,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     // ===================================================================================
     // 连线拖拽
     // ===================================================================================
-    const enableConnectionTool = ref(true)
+    const enableConnectionTool = ref(false)
 
     const validConnectionTargetIds = ref(new Set())
 
@@ -532,6 +532,14 @@ export const useTimelineStore = defineStore('timeline', () => {
         const activeChar = characterRoster.value.find(c => c.id === activeTrackId.value)
         if (!activeChar) return []
 
+        const TYPE_ORDER = {
+            'attack': 1,
+            'execution': 2,
+            'skill': 3,
+            'link': 4,
+            'ultimate': 5
+        }
+
         const getAnomalies = (list) => list || []
         const getAllowed = (list) => list || []
 
@@ -612,7 +620,25 @@ export const useTimelineStore = defineStore('timeline', () => {
 
         const variantSkills = (activeChar.variants || []).map(v => createVariantSkill(v))
 
-        return [...standardSkills, ...variantSkills]
+        const allSkills = [...standardSkills, ...variantSkills];
+
+        return allSkills.sort((a, b) => {
+            const weightA = TYPE_ORDER[a.type] || 99;
+            const weightB = TYPE_ORDER[b.type] || 99;
+
+            if (weightA !== weightB) {
+                return weightA - weightB;
+            }
+
+            const isVariantA = a.id.includes('_variant_');
+            const isVariantB = b.id.includes('_variant_');
+
+            if (isVariantA !== isVariantB) {
+                return isVariantA ? 1 : -1;
+            }
+
+            return 0;
+        });
     })
 
     function applyEnemyPreset(enemyId) {
