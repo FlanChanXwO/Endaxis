@@ -25,7 +25,7 @@
   "characterRoster": [
     {
       "id": "ENDMINISTRATOR",
-      "name": "管理员",
+      "name": "管理员ce",
       "rarity": 6,
       "element": "physical",
       "avatar": "/avatars/ENDMINISTRATOR.png",
@@ -1056,32 +1056,32 @@
       "name": "莱万汀",
       "rarity": 6,
       "element": "blaze",
-      "avatar": "/avatars/LAEVATAIN.png",
+      "avatar": "/avatars/LAEVATAIN/LAEVATAIN.png",
       "exclusive_buffs": [
+        {
+          "key": "magma_0",
+          "name": "熔火0",
+          "path": "/avatars/LAEVATAIN/magma_0.png"
+        },
         {
           "key": "magma_1",
           "name": "熔火1",
-          "path": "/icons/magma_1.png"
+          "path": "/avatars/LAEVATAIN/magma_1.png"
         },
         {
           "key": "magma_2",
           "name": "熔火2",
-          "path": "/icons/magma_2.png"
+          "path": "/avatars/LAEVATAIN/magma_2.png"
         },
         {
           "key": "magma_3",
           "name": "熔火3",
-          "path": "/icons/magma_3.png"
+          "path": "/avatars/LAEVATAIN/magma_3.png"
         },
         {
           "key": "magma_4",
           "name": "熔火4",
-          "path": "/icons/magma_4.png"
-        },
-        {
-          "key": "magma_0",
-          "name": "熔火0",
-          "path": "/icons/magma_0.png"
+          "path": "/avatars/LAEVATAIN/magma_4.png"
         }
       ],
       "attack_duration": 3.3,
@@ -1143,7 +1143,8 @@
           {
             "type": "magma_1",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -1173,7 +1174,8 @@
           {
             "type": "magma_1",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -1205,22 +1207,26 @@
           {
             "type": "magma_1",
             "stacks": 1,
-            "duration": 3.5
+            "duration": 3.5,
+            "offset": 0
           },
           {
             "type": "magma_2",
             "stacks": 1,
-            "duration": 3.5
+            "duration": 3.5,
+            "offset": 0
           },
           {
             "type": "magma_3",
             "stacks": 1,
-            "duration": 3.5
+            "duration": 3.5,
+            "offset": 0
           },
           {
             "type": "magma_4",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -1352,7 +1358,7 @@
           "teamGaugeGain": 0
         }
       ],
-      "ultimate_enhancementTime": 0,
+      "ultimate_enhancementTime": 15,
       "ultimate_animationTime": 2
     },
     {
@@ -1531,7 +1537,7 @@
           "id": "v_1765344650632",
           "name": "强化大招",
           "type": "ultimate",
-          "duration": 0.5,
+          "duration": 1.9,
           "allowedTypes": [
             "knockdown",
             "break",
@@ -1579,7 +1585,7 @@
           "gaugeCost": 90,
           "gaugeGain": 0,
           "enhancementTime": 0,
-          "animationTime": 0
+          "animationTime": 1.9
         }
       ],
       "ultimate_enhancementTime": 0,
@@ -2145,15 +2151,7 @@
         }
       ],
       "ultimate_allowed_types": [],
-      "ultimate_anomalies": [
-        [
-          {
-            "type": "default",
-            "stacks": 1,
-            "duration": 0
-          }
-        ]
-      ],
+      "ultimate_anomalies": [],
       "execution_duration": 1.5,
       "execution_damage_ticks": [],
       "execution_allowed_types": [
