@@ -1,25 +1,23 @@
 {
   "ICON_DATABASE": {
-    "break": "/icons/break.png",
-    "armor_break": "/icons/armor_break.png",
-    "stagger": "/icons/stagger.png",
-    "knockdown": "/icons/knockdown.png",
-    "knockup": "/icons/knockup.png",
-    "blaze_attach": "/icons/blaze_attach.png",
-    "emag_attach": "/icons/emag_attach.png",
-    "cold_attach": "/icons/cold_attach.png",
-    "nature_attach": "/icons/nature_attach.png",
-    "blaze_burst": "/icons/blaze_burst.png",
-    "emag_burst": "/icons/emag_burst.png",
-    "cold_burst": "/icons/cold_burst.png",
-    "nature_burst": "/icons/nature_burst.png",
-    "burning": "/icons/burning.png",
-    "conductive": "/icons/conductive.png",
-    "frozen": "/icons/frozen.png",
-    "ice_shatter": "/icons/ice_shatter.png",
-    "corrosion": "/icons/corrosion.png",
-    "consumed": "/icons/consumed.png",
-    "logic_tick": "/icons/default_icon.png",
+    "break": "/icons/icon_battle_physical_no_guard.png",
+    "armor_break": "/icons/icon_battle_physical_fracture.png",
+    "stagger": "/icons/icon_battle_physical_crush.png",
+    "knockdown": "/icons/icon_battle_physical_knockdown.png",
+    "knockup": "/icons/icon_battle_physical_airborne.png",
+    "blaze_attach": "/icons/icon_energy_fusion_fire.png",
+    "emag_attach": "/icons/icon_energy_fusion_pulse.png",
+    "cold_attach": "/icons/icon_energy_fusion_cryst.png",
+    "nature_attach": "/icons/icon_energy_fusion_nature.png",
+    "blaze_burst": "/icons/icon_burst_fusion_fire.png",
+    "emag_burst": "/icons/icon_burst_fusion_pulse.png",
+    "cold_burst": "/icons/icon_burst_fusion_cryst.png",
+    "nature_burst": "/icons/icon_burst_fusion_nature.png",
+    "burning": "/icons/icon_battle_debuff_burning.png",
+    "conductive": "/icons/icon_battle_debuff_conduct.png",
+    "frozen": "/icons/icon_battle_debuff_frozen.png",
+    "ice_shatter": "/icons/icon_battle_debuff_crystbreak.png",
+    "corrosion": "/icons/icon_battle_debuff_corrupt.png",
     "default": "/icons/default_icon.png"
   },
   "characterRoster": [
@@ -28,12 +26,12 @@
       "name": "管理员",
       "rarity": 6,
       "element": "physical",
-      "avatar": "/avatars/ENDMINISTRATOR.png",
+      "avatar": "/avatars/ENDMINISTRATOR/ENDMINISTRATOR.png",
       "exclusive_buffs": [
         {
-          "key": "crystallization",
+          "key": "endmin_debuff",
           "name": "结晶",
-          "path": "/icons/crystallization.png"
+          "path": "/avatars/ENDMINISTRATOR/icon_skill_endmin_debuff.png"
         }
       ],
       "attack_duration": 3.7,
@@ -106,12 +104,12 @@
         }
       ],
       "link_allowed_types": [
-        "crystallization"
+        "endmin_debuff"
       ],
       "link_anomalies": [
         [
           {
-            "type": "crystallization",
+            "type": "endmin_debuff",
             "stacks": 1,
             "duration": 4,
             "offset": 0.8
@@ -169,12 +167,12 @@
       "name": "骏卫",
       "rarity": 6,
       "element": "physical",
-      "avatar": "/avatars/POGRANICHNK.png",
+      "avatar": "/avatars/POGRANICHNK/POGRANICHNK.png",
       "exclusive_buffs": [
         {
-          "key": "steel_oath",
+          "key": "pograni_buff",
           "name": "铁誓",
-          "path": "/icons/steel_oath.png"
+          "path": "/avatars/POGRANICHNK/icon_battle_pograni_buff.png"
         }
       ],
       "attack_duration": 3.3,
@@ -268,39 +266,59 @@
           "offset": 0,
           "sp": 0,
           "stagger": 0
+        },
+        {
+          "offset": 0,
+          "stagger": 0,
+          "sp": 0
+        },
+        {
+          "offset": 0,
+          "stagger": 0,
+          "sp": 0
+        },
+        {
+          "offset": 0,
+          "stagger": 0,
+          "sp": 0
+        },
+        {
+          "offset": 0,
+          "stagger": 0,
+          "sp": 0
         }
       ],
       "ultimate_allowed_types": [
-        "steel_oath"
+        "pograni_buff"
       ],
       "ultimate_anomalies": [
         [
           {
-            "type": "steel_oath",
+            "type": "pograni_buff",
             "stacks": 5,
             "duration": 0,
             "offset": 0
           },
           {
-            "type": "steel_oath",
+            "type": "pograni_buff",
             "stacks": 4,
             "duration": 0,
             "offset": 0
           },
           {
-            "type": "steel_oath",
+            "type": "pograni_buff",
             "stacks": 3,
             "duration": 0,
             "offset": 0
           },
           {
-            "type": "steel_oath",
+            "type": "pograni_buff",
             "stacks": 2,
             "duration": 0,
             "offset": 0
           },
           {
-            "type": "steel_oath",
+            "type": "pograni_buff",
             "stacks": 1,
             "duration": 0,
             "offset": 0
@@ -438,17 +456,17 @@
       "name": "艾尔黛拉",
       "rarity": 6,
       "element": "nature",
-      "avatar": "/avatars/ARDELIA.png",
+      "avatar": "/avatars/ARDELIA/ARDELIA.png",
       "exclusive_buffs": [
         {
-          "key": "physical_weakness",
-          "name": "物理易伤",
-          "path": "/icons/physical_weakness.png"
+          "key": "spell_vulnerable",
+          "name": "法术脆弱",
+          "path": "/icons/icon_battle_affix_spell_vulnerable.png"
         },
         {
-          "key": "magic_weakness",
-          "name": "法术易伤",
-          "path": "/icons/magic_weakness.png"
+          "key": "physical_vulnerable",
+          "name": "物理脆弱",
+          "path": "/icons/icon_battle_affix_physical_vulnerable.png"
         }
       ],
       "attack_duration": 4.3,
@@ -491,20 +509,24 @@
         }
       ],
       "skill_allowed_types": [
-        "physical_weakness",
-        "magic_weakness"
+        "spell_vulnerable",
+        "physical_vulnerable"
       ],
       "skill_anomalies": [
         [
           {
-            "type": "physical_weakness",
+            "type": "spell_vulnerable",
             "stacks": 1,
-            "duration": 0
-          },
+            "duration": 0,
+            "offset": 0
+          }
+        ],
+        [
           {
-            "type": "magic_weakness",
+            "type": "physical_vulnerable",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -590,12 +612,12 @@
       "name": "别礼",
       "rarity": 6,
       "element": "cold",
-      "avatar": "/avatars/LASTRITE.png",
+      "avatar": "/avatars/LASTRITE/LASTRITE.png",
       "exclusive_buffs": [
         {
-          "key": "cold_enchantment",
-          "name": "寒冷附魔",
-          "path": "/icons/cold_enchantment.png"
+          "key": "lastrite_buff",
+          "name": "低温灌注",
+          "path": "icon_battle_lastrite_buff.png"
         }
       ],
       "attack_duration": 4.3,
@@ -630,22 +652,17 @@
       "skill_duration": 0.5,
       "skill_spCost": 100,
       "skill_gaugeGain": 16,
-      "skill_damage_ticks": [
-        {
-          "offset": 0,
-          "sp": 0,
-          "stagger": 0
-        }
-      ],
+      "skill_damage_ticks": [],
       "skill_allowed_types": [
-        "cold_enchantment"
+        "lastrite_buff"
       ],
       "skill_anomalies": [
         [
           {
-            "type": "cold_enchantment",
+            "type": "lastrite_buff",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -707,17 +724,17 @@
       "name": "洁尔佩塔",
       "rarity": 6,
       "element": "nature",
-      "avatar": "/avatars/GILBERTA.png",
+      "avatar": "/avatars/GILBERTA/GILBERTA.png",
       "exclusive_buffs": [
         {
-          "key": "slow",
-          "name": "减速",
-          "path": "/icons/slow.png"
+          "key": "affix_slow",
+          "name": "缓速",
+          "path": "/icons/icon_battle_affix_slow.png"
         },
         {
-          "key": "magic_weakness",
-          "name": "法术易伤",
-          "path": "/icons/magic_weakness.png"
+          "key": "spell_vulnerable",
+          "name": "法术脆弱",
+          "path": "/icons/icon_battle_affix_spell_vulnerable.png"
         }
       ],
       "attack_duration": 3.5,
@@ -815,31 +832,35 @@
         }
       ],
       "ultimate_allowed_types": [
-        "slow",
-        "magic_weakness",
-        "knockup",
-        "break",
-        "ice_shatter",
         "nature_attach",
         "corrosion",
-        "nature_burst"
+        "nature_burst",
+        "affix_slow",
+        "spell_vulnerable"
       ],
       "ultimate_anomalies": [
         [
           {
-            "type": "slow",
+            "type": "affix_slow",
             "stacks": 1,
-            "duration": 0
-          },
+            "duration": 5,
+            "offset": 0
+          }
+        ],
+        [
           {
-            "type": "magic_weakness",
+            "type": "spell_vulnerable",
             "stacks": 1,
-            "duration": 0
-          },
+            "duration": 5,
+            "offset": 0
+          }
+        ],
+        [
           {
             "type": "nature_attach",
             "stacks": 1,
-            "duration": 0
+            "duration": 0,
+            "offset": 0
           }
         ]
       ],
@@ -879,7 +900,7 @@
       "name": "伊冯",
       "rarity": 6,
       "element": "cold",
-      "avatar": "/avatars/YVONNE.png",
+      "avatar": "/avatars/YVONNE/YVONNE.png",
       "exclusive_buffs": [],
       "attack_duration": 3.7,
       "attack_damage_ticks": [
@@ -1305,7 +1326,7 @@
           "physicalAnomaly": [
             [
               {
-                "type": "magma_1",
+                "type": "magma_4",
                 "stacks": 1,
                 "duration": 0
               }
@@ -1340,7 +1361,7 @@
           "physicalAnomaly": [
             [
               {
-                "type": "magma_1",
+                "type": "magma_4",
                 "stacks": 1,
                 "duration": 0
               }
@@ -1366,17 +1387,17 @@
       "name": "黎风",
       "rarity": 6,
       "element": "physical",
-      "avatar": "/avatars/LIFENG.png",
+      "avatar": "/avatars/LIFENG/LIFENG.png",
       "exclusive_buffs": [
         {
           "key": "combo",
           "name": "连击",
-          "path": "/icons/icon_term_ba_combo.png"
+          "path": "/icons/icon_battle_affix_combo.png"
         },
         {
-          "key": "physical_weakness",
-          "name": "物理易伤",
-          "path": "/icons/physical_weakness.png"
+          "key": "physical_vulnerable",
+          "name": "物理脆弱",
+          "path": "/icons/icon_battle_affix_physical_vulnerable.png"
         }
       ],
       "attack_duration": 3.2,
@@ -1422,7 +1443,7 @@
         "knockdown",
         "break",
         "ice_shatter",
-        "physical_weakness"
+        "physical_vulnerable"
       ],
       "skill_anomalies": [
         [
@@ -1435,7 +1456,7 @@
         ],
         [
           {
-            "type": "physical_weakness",
+            "type": "physical_vulnerable",
             "stacks": 1,
             "duration": 10,
             "offset": 1.9
@@ -1548,20 +1569,20 @@
               {
                 "type": "knockdown",
                 "stacks": 1,
-                "duration": 2,
-                "hideDuration": true
-              },
-              {
-                "type": "knockdown",
-                "stacks": 1,
-                "duration": 1.9,
-                "hideDuration": true
+                "duration": 0,
+                "offset": 0
               },
               {
                 "type": "knockdown",
                 "stacks": 1,
                 "duration": 0,
-                "offset": 0
+                "offset": 2
+              },
+              {
+                "type": "knockdown",
+                "stacks": 1,
+                "duration": 0,
+                "offset": 3.9
               }
             ]
           ],
@@ -1596,7 +1617,7 @@
       "name": "余烬",
       "rarity": 6,
       "element": "blaze",
-      "avatar": "/avatars/EMBER.png",
+      "avatar": "/avatars/EMBER/EMBER.png",
       "exclusive_buffs": [],
       "attack_duration": 4.2,
       "attack_damage_ticks": [
@@ -1726,7 +1747,7 @@
       "name": "赛希",
       "rarity": 5,
       "element": "cold",
-      "avatar": "/avatars/XAIHI.png",
+      "avatar": "/avatars/XAIHI/XAIHI.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 3.3,
@@ -1841,7 +1862,7 @@
       "name": "昼雪",
       "rarity": 5,
       "element": "cold",
-      "avatar": "/avatars/SNOWSHINE.png",
+      "avatar": "/avatars/SNOWSHINE/SNOWSHINE.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 3.8,
@@ -1960,7 +1981,7 @@
       "name": "弧光",
       "rarity": 5,
       "element": "emag",
-      "avatar": "/avatars/ARCLIGHT.png",
+      "avatar": "/avatars/ARCLIGHT/ARCLIGHT.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 3,
@@ -2079,7 +2100,7 @@
       "name": "艾维文娜",
       "rarity": 5,
       "element": "emag",
-      "avatar": "/avatars/AVYWENNA.png",
+      "avatar": "/avatars/AVYWENNA/AVYWENNA.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 3.2,
@@ -2354,7 +2375,7 @@
       "name": "狼卫",
       "rarity": 5,
       "element": "blaze",
-      "avatar": "/avatars/WULFGARD.png",
+      "avatar": "/avatars/WULFGARD/WULFGARD.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 4,
@@ -2516,7 +2537,7 @@
       "name": "佩丽卡",
       "rarity": 5,
       "element": "emag",
-      "avatar": "/avatars/PERLICA.png",
+      "avatar": "/avatars/PERLICA/PERLICA.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 3.3,
@@ -2646,7 +2667,7 @@
       "name": "陈千语",
       "rarity": 5,
       "element": "physical",
-      "avatar": "/avatars/CHENQIANYU.png",
+      "avatar": "/avatars/CHENQIANYU/CHENQIANYU.png",
       "exclusive_buffs": [],
       "attack_duration": 3.2,
       "attack_damage_ticks": [
@@ -2778,7 +2799,7 @@
       "name": "阿列什",
       "rarity": 5,
       "element": "cold",
-      "avatar": "/avatars/ALESH.png",
+      "avatar": "/avatars/ALESH/ALESH.png",
       "exclusive_buffs": [],
       "attack_duration": 3.2,
       "attack_damage_ticks": [
@@ -2905,7 +2926,7 @@
       "name": "卡契尔",
       "rarity": 4,
       "element": "physical",
-      "avatar": "/avatars/CATCHER.png",
+      "avatar": "/avatars/CATCHER/CATCHER.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 2.5,
@@ -3024,7 +3045,7 @@
       "name": "萤石",
       "rarity": 4,
       "element": "nature",
-      "avatar": "/avatars/FLUORITE.png",
+      "avatar": "/avatars/FLUORITE/FLUORITE.png",
       "exclusive_buffs": [],
       "accept_team_gauge": true,
       "attack_duration": 2.5,
@@ -3284,7 +3305,7 @@
       "name": "埃特拉",
       "rarity": 4,
       "element": "cold",
-      "avatar": "/avatars/ESTELLA.png",
+      "avatar": "/avatars/ESTELLA/ESTELLA.png",
       "exclusive_buffs": [],
       "attack_duration": 2.5,
       "attack_damage_ticks": [
@@ -3413,7 +3434,7 @@
       "name": "秋栗",
       "rarity": 4,
       "element": "blaze",
-      "avatar": "/avatars/AKEKURI.png",
+      "avatar": "/avatars/AKEKURI/AKEKURI.png",
       "exclusive_buffs": [],
       "attack_duration": 2.5,
       "attack_damage_ticks": [
