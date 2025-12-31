@@ -1265,6 +1265,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         sources.sort((a, b) => a.logicalTime - b.logicalTime);
 
         const extensions = [];
+        let cumulativeTime = 0;
         for (let i = 0; i < sources.length; i++) {
             const current = sources[i];
             const next = sources[i + 1];
@@ -1280,7 +1281,16 @@ export const useTimelineStore = defineStore('timeline', () => {
                     amount = 0.5;
                 }
             }
-            extensions.push({ time: current.startTime, amount: amount, sourceId: current.instanceId });
+            const gameTime = current.startTime - cumulativeTime;
+            extensions.push({
+                time: current.startTime,
+                gameTime: gameTime,
+                amount: amount,
+                sourceId: current.instanceId,
+                logicalTime: current.logicalTime,
+                cumulativeFreezeTime: cumulativeTime
+            });
+            cumulativeTime += amount;
         }
         return extensions;
     });
@@ -1357,6 +1367,45 @@ export const useTimelineStore = defineStore('timeline', () => {
             });
         }
         return currentTimeLimit;
+    }
+
+    function toGameTime(realTimeS) {
+        const extensions = globalExtensions.value;
+
+        for (const ext of extensions) {
+            const freezeRealStart = ext.gameTime + ext.cumulativeFreezeTime;
+
+            const freezeRealEnd = freezeRealStart + ext.amount;
+
+            if (realTimeS >= freezeRealStart && realTimeS < freezeRealEnd) {
+                return ext.gameTime;
+            }
+
+            if (realTimeS < freezeRealStart) {
+                return realTimeS - ext.cumulativeFreezeTime;
+            }
+        }
+
+        const last = extensions[extensions.length - 1];
+        if (last) {
+            const totalOffset = last.cumulativeFreezeTime + last.amount;
+            return realTimeS - totalOffset;
+        }
+
+        return realTimeS;
+    }
+
+    function toRealTime(gameTimeS) {
+        const extensions = globalExtensions.value;
+        const breakPoint = extensions.toReversed().find(e => e.gameTime <= gameTimeS);
+
+        if (!breakPoint) return gameTimeS;
+
+        if (gameTimeS === breakPoint.gameTime) {
+            return gameTimeS + breakPoint.cumulativeFreezeTime;
+        }
+
+        return gameTimeS + breakPoint.cumulativeFreezeTime + breakPoint.amount;
     }
 
     function pushSubsequentActions(triggerTime, amount, excludeIds = []) {
@@ -1932,7 +1981,7 @@ export const useTimelineStore = defineStore('timeline', () => {
     }
 
     return {
-        MAX_SCENARIOS, toTimelineSpace, toViewportSpace, updateActionRects,
+        MAX_SCENARIOS, toTimelineSpace, toViewportSpace, updateActionRects, toGameTime, toRealTime,
         systemConstants, isLoading, characterRoster, iconDatabase, tracks, connections, activeTrackId, timelineScrollLeft, timelineScrollTop, timelineRect, trackLaneRects, nodeRects, globalDragOffset, draggingSkillData,
         selectedActionId, selectedLibrarySkillId, multiSelectedIds, clipboard, isCapturing, setIsCapturing, showCursorGuide, isBoxSelectMode, cursorCurrentTime, cursorPosition, snapStep,
         selectedAnomalyId, setSelectedAnomalyId, updateTrackGaugeEfficiency,

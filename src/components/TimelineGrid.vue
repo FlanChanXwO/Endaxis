@@ -312,19 +312,23 @@ function getViewWindow({ bufferPx = 0 } = {}) {
 
 const dynamicTicks = computed(() => {
   const width = TIME_BLOCK_WIDTH.value;
-    
   const viewWindow = getViewWindow({ bufferPx: 0 });
 
-  const ticks = [];
+  const realStart = viewWindow.startTime;
+  const realEnd = viewWindow.endTime;
+  
+  const gameStart = store.toGameTime(realStart);
 
   let subDivision = 1;
   if (width >= 800) subDivision = 60;
   else if (width >= 200) subDivision = 10;
   else if (width >= 100) subDivision = 2;
-  else subDivision = 1;
 
-  const startStep = viewWindow.startTime * subDivision;
-  const endStep = viewWindow.endTime * subDivision;
+  const startStep = Math.floor(Math.min(realStart, gameStart) * subDivision);
+  const endStep = Math.ceil(realEnd * subDivision);
+
+  const realTicks = [];
+  const gameTicks = [];
 
   for (let i = startStep; i <= endStep; i++) {
     const t = i / subDivision;
@@ -352,7 +356,6 @@ const dynamicTicks = computed(() => {
         if (width >= 500) label = `.${Math.round((t % 1) * 10)}`;
       } else if (subDivision === 60) {
         const frameIdx = i % 60;
-
         if (frameIdx % 10 === 0 && frameIdx !== 0) {
           type = 'tenth';
           if (width >= 600) label = `${frameIdx}f`;
@@ -367,9 +370,27 @@ const dynamicTicks = computed(() => {
       }
     }
 
-    ticks.push({ time: t, type, label, x: t * width });
+    realTicks.push({
+      time: t,
+      type,
+      label,
+      x: t * width
+    });
+
+    const realT = store.toRealTime(t);
+
+    // 游戏时间相对现实时间有偏移，所以再检查一次窗口边界
+    if (realT >= realStart && realT <= realEnd) {
+      gameTicks.push({
+        time: t,
+        type,
+        label,
+        x: realT * width
+      });
+    }
   }
-  return ticks;
+
+  return { realTicks, gameTicks };
 });
 
 function forceSvgUpdate() { svgRenderKey.value++ }
@@ -1202,12 +1223,28 @@ onUnmounted(() => {
 
     <div class="time-ruler-wrapper" ref="timeRulerWrapperRef" @click="store.selectTrack(null)">
       <div class="time-ruler-track" :style="{ width: `${store.TOTAL_DURATION * TIME_BLOCK_WIDTH}px` }">
-        <div v-for="tick in dynamicTicks"
+        <div v-for="tick in dynamicTicks.realTicks"
              :key="tick.time"
              class="tick-line"
              :class="tick.type"
              :style="{ left: `${Math.round(tick.x)}px` }">
           <span v-if="tick.label" class="tick-label">{{ tick.label }}</span>
+        </div>
+      </div>
+      <div class="time-ruler-track" :style="{ width: `${store.TOTAL_DURATION * TIME_BLOCK_WIDTH}px` }">
+        <div v-for="(ext, idx) in store.globalExtensions"
+             :key="idx"
+             class="freeze-region-dim timeline"
+             :style="{
+             left: `${ext.time * TIME_BLOCK_WIDTH}px`,
+             width: `${ext.amount * TIME_BLOCK_WIDTH}px`}">
+        </div>
+        <div v-for="tick in dynamicTicks.gameTicks"
+             :key="tick.time"
+             class="tick-line"
+             :class="tick.type"
+             :style="{ left: `${Math.round(tick.x)}px` }">
+           <span v-if="tick.label" class="tick-label">{{ tick.label }}</span>
         </div>
       </div>
       <div class="operation-layer">
@@ -1433,7 +1470,7 @@ onUnmounted(() => {
 .timeline-grid-layout {
   display: grid;
   grid-template-columns: 180px 1fr;
-  grid-template-rows: 50px 1fr;
+  grid-template-rows: 60px 1fr;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -1600,11 +1637,17 @@ body.capture-mode .davinci-range {
   z-index: 6;
   user-select: none;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-top: 50px;
 }
 
 .time-ruler-track {
   position: relative;
-  height: 100%;
+  flex-grow: 1;
+  flex-shrink: 0;
+  height: 25px;
   width: 100%;
 }
 
@@ -2569,6 +2612,18 @@ body.capture-mode .davinci-range {
   align-items: center;
   justify-content: center;
   overflow: visible;
+
+  &.timeline {
+    border: none;
+    transition: none;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.2) 3px,
+      rgba(255, 255, 255, 0.1) 3px,
+      rgba(255, 255, 255, 0.1) 6px
+    );
+  }
 }
 
 .freeze-duration-label {
