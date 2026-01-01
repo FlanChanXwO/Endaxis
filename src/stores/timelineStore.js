@@ -1250,7 +1250,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         const sources = [];
         tracks.value.forEach(track => {
             track.actions.forEach(action => {
-                if (action.isDisabled) return;
+                if (action.isDisabled || (action.triggerWindow || 0) < 0) return;
                 if (action.type === 'link' || action.type === 'ultimate') {
                     sources.push({
                         logicalTime: action.logicalStartTime ?? action.startTime,
@@ -1301,7 +1301,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         const allActions = tracks.value.flatMap(t => t.actions)
             .sort((a, b) => (a.logicalStartTime ?? a.startTime) - (b.logicalStartTime ?? b.startTime));
 
-        const stopSources = allActions.filter(a => (a.type === 'link' || a.type === 'ultimate') && !a.isDisabled);
+        const stopSources = allActions.filter(a => (a.type === 'link' || a.type === 'ultimate') && !a.isDisabled && (a.triggerWindow || 0) >= 0);
 
         let lastPhysicalEnd = 0;
         const sourceShiftMap = new Map();
@@ -1457,7 +1457,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         tracks.value.forEach(track => {
             if (!track.actions) return;
             track.actions.forEach(action => {
-                if (action.isDisabled) return;
+                if (action.isDisabled || (action.triggerWindow || 0) < 0) return;
 
                 // 收集所有失衡值变动事件，并进行时间对齐
                 if (action.stagger > 0) {
@@ -1550,7 +1550,7 @@ export const useTimelineStore = defineStore('timeline', () => {
 
         tracks.value.forEach(track => {
             track.actions.forEach(action => {
-                if (action.isDisabled) return;
+                if (action.isDisabled || (action.triggerWindow || 0) < 0) return;
 
                 if (action.type === 'skill') {
                     pauseWindows.push({
@@ -1708,7 +1708,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         tracks.value.forEach(sourceTrack => {
             if (!sourceTrack.actions) return;
             sourceTrack.actions.forEach(action => {
-                if (action.isDisabled) return;
+                if (action.isDisabled || (action.triggerWindow || 0) < 0) return;
 
                 // 自身动作能量变动
                 if (sourceTrack.id === trackId) {

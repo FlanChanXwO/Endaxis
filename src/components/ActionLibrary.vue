@@ -173,7 +173,7 @@ function onNativeDragEnd() {
     </div>
 
     <div v-if="activeTrack && activeCharacter" class="gauge-settings-panel">
-      <div class="panel-tag">终极技充能</div>
+      <div class="panel-tag">干员数值</div>
 
       <div class="setting-group">
         <div class="setting-info">
@@ -252,12 +252,12 @@ function onNativeDragEnd() {
 
 <style scoped>
 .library-container {
-  padding: 20px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
   background-color: #252525;
   height: 100%;
-  gap: 20px;
+  gap: 15px;
   overflow-y: auto;
   transition: background-color 0.3s ease;
 }
@@ -277,11 +277,12 @@ function onNativeDragEnd() {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-left: 3px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  padding: 16px;
+  padding: 12px;
+  margin-top: 10px;
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 .panel-tag {
@@ -309,7 +310,7 @@ function onNativeDragEnd() {
   border-right: 1px solid rgba(255,255,255,0.3);
   border-bottom: 1px solid rgba(255,255,255,0.3);
 }
-.setting-group { display: flex; flex-direction: column; gap: 8px; }
+.setting-group { display: flex; flex-direction: column; gap: 4px; }
 .setting-info { display: flex; justify-content: space-between; align-items: baseline; }
 .label { font-size: 11px;color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 1px; }
 .value { font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 15px; }
@@ -318,7 +319,7 @@ function onNativeDragEnd() {
 .green { color: #52c41a; }
 .setting-controls { display: flex; align-items: center; gap: 12px; }
 .tech-slider { flex-grow: 1; }
-.tech-input { width: 200px; }
+.tech-input { width: 150px; }
 .group-divider { height: 1px;background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%); }
 
 /* 技能卡片列表 */
@@ -429,7 +430,7 @@ function onNativeDragEnd() {
 }
 
 /* Slider 自定义 */
-:deep(.el-slider) { height: 32px; display: flex; align-items: center; }
+:deep(.el-slider) { height: 24px; display: flex; align-items: center; }
 :deep(.el-slider__runway) { height: 4px !important; background-color: rgba(255, 255, 255, 0.1) !important; border-radius: 2px; margin: 0 !important; flex: 1; }
 :deep(.el-slider__bar) { height: 4px !important; border-radius: 2px; }
 :deep(.el-slider__button-wrapper) { height: 100% !important; top: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 36px !important; background-color: transparent !important; }

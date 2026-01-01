@@ -75,6 +75,17 @@ const style = computed(() => {
     zIndex: isSelected.value ? 20 : 10,
   }
 
+  if (isGhostMode.value) {
+    return {
+      ...layoutStyle,
+      border: 'none',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      color: 'transparent',
+      pointerEvents: isSelected.value ? 'auto' : 'none'
+    }
+  }
+
   let borderStyle = ''
   if (isSelected.value) {
     borderStyle = `2px dashed #ffffff`
@@ -121,17 +132,6 @@ const style = computed(() => {
       opacity: 0.6,
       backdropFilter: 'none',
       backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.5) 5px, rgba(0,0,0,0.5) 10px)'
-    }
-  }
-
-  if (isGhostMode.value) {
-    return {
-      ...layoutStyle,
-      border: 'none',
-      backgroundColor: 'transparent',
-      boxShadow: 'none',
-      color: 'transparent',
-      pointerEvents: isSelected.value ? 'auto' : 'none'
     }
   }
 
@@ -185,17 +185,20 @@ const customBarsToRender = computed(() => {
   const widthUnit = store.timeBlockWidth
   const bars = props.action.customBars || []
   return bars.map((bar, index) => {
-    const duration = bar.duration || 0
+    const originalDuration = bar.duration || 0
     const originalOffset = bar.offset || 0
-    if (duration <= 0) return null
+    if (originalDuration <= 0) return null
 
-    // 起始点位置需要偏移
+    // 计算起始点的现实偏移
     const shiftedStartTimestamp = store.getShiftedEndTime(props.action.startTime, originalOffset, props.action.instanceId)
     const shiftedOffset = shiftedStartTimestamp - props.action.startTime
 
-    // 条的长度也需要计算期间发生的时停
-    const shiftedEndTimestamp = store.getShiftedEndTime(shiftedStartTimestamp, duration, props.action.instanceId)
+    // 计算受时停影响后的结束点，从而得出最终视觉时长
+    const shiftedEndTimestamp = store.getShiftedEndTime(shiftedStartTimestamp, originalDuration, props.action.instanceId)
     const shiftedDuration = shiftedEndTimestamp - shiftedStartTimestamp
+
+    // 计算延长量
+    const extensionAmount = Math.round((shiftedDuration - originalDuration) * 1000) / 1000
 
     const left = (shiftedOffset * widthUnit) - 2
     const width = shiftedDuration * widthUnit
@@ -203,8 +206,8 @@ const customBarsToRender = computed(() => {
 
     return {
       style: { width: `${width}px`, left: `${left}px`, bottom: `${bottomOffset}px`, position: 'absolute', pointerEvents: 'none', opacity: 0.6, zIndex: 5 - index },
-      text: bar.text,
-      duration: Number(shiftedDuration.toFixed(1)) // 显示受影响后的时长
+      text: bar.text, originalDuration, extensionAmount,
+      displayDuration: Number(shiftedDuration.toFixed(1))
     }
   }).filter(item => item !== null)
 })
@@ -435,7 +438,11 @@ function handleEffectDrop(effectId) {
         <div class="cb-line"></div>
         <div class="cb-end-mark"></div>
         <span v-if="barItem.text" class="cb-label">{{ barItem.text }}</span>
-        <span class="cb-duration">{{ store.formatTimeLabel(barItem.duration) }}</span>
+
+        <span class="cb-duration">
+          {{ store.formatTimeLabel(barItem.originalDuration) }}
+          <span v-if="barItem.extensionAmount > 0" class="extension-label">(+{{ store.formatTimeLabel(barItem.extensionAmount) }})</span>
+        </span>
       </div>
     </template>
 
@@ -693,7 +700,7 @@ function handleEffectDrop(effectId) {
   font-size: 10px; font-weight: bold; white-space: nowrap; line-height: 1; color: #69c0ff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
-.cb-duration { position: absolute; left: 0; top: 4px; font-size: 10px; font-weight: bold; line-height: 1; color: #69c0ff; }
+.cb-duration { position: absolute; left: 0; top: 4px; font-size: 10px; font-weight: bold; line-height: 1; color: #69c0ff; display: flex; align-items: center; }
 .cb-end-mark { position: absolute; right: 0; width: 1px; height: 8px; background-color: #69c0ff; top: 50%; transform: translateY(-50%); }
 
 .trigger-window-bar {

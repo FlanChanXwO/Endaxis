@@ -759,7 +759,7 @@ function handleStartConnection(id) {
 
 <style scoped>
 /* Base & Layout */
-.properties-panel { padding: 20px; background-color: #252525; display: flex; flex-direction: column; gap: 20px; height: 100%; box-sizing: border-box; overflow-y: auto; font-size: 13px; color: #e0e0e0; transition: background-color 0.3s ease; scrollbar-width: thin; scrollbar-color: #444 transparent; }
+.properties-panel { padding: 15px; background-color: #252525; display: flex; flex-direction: column; gap: 15px; height: 100%; box-sizing: border-box; overflow-y: auto; font-size: 13px; color: #e0e0e0; transition: background-color 0.3s ease; scrollbar-width: thin; scrollbar-color: #444 transparent; }
 .panel-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 0; }
 .header-main-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; overflow: hidden; }
 .left-group { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
@@ -772,7 +772,7 @@ function handleStartConnection(id) {
 
 /* Sections */
 .section-container { margin-bottom: 0; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 4px; overflow: hidden; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
-.section-container.tech-style { background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 3px solid rgba(255, 255, 255, 0.2); padding: 16px 10px 10px 10px; position: relative; overflow: visible !important; flex-shrink: 0; margin-top: 10px !important; }
+.section-container.tech-style { background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 3px solid rgba(255, 255, 255, 0.2); padding: 12px; position: relative; overflow: visible !important; flex-shrink: 0; margin-top: 12px !important; }
 .section-container.tech-style.border-red { border-left-color: #ff7875 !important; }
 .section-container.tech-style.border-blue { border-left-color: #00e5ff !important; }
 .section-container.tech-style::before { content: ""; position: absolute; bottom: 4px; right: 4px; width: 10px; height: 10px; border-right: 1px solid rgba(255,255,255,0.3); border-bottom: 1px solid rgba(255,255,255,0.3); pointer-events: none; }
@@ -786,7 +786,7 @@ function handleStartConnection(id) {
 .toggle-arrow { color: #666; font-size: 14px; transition: transform 0.2s; }
 .section-content-tech { margin-top: 10px; animation: fadeIn 0.2s ease; }
 .tech-style .form-group.compact label { font-size: 11px !important; color: rgba(255, 255, 255, 0.5) !important; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px !important; font-family: 'Inter', sans-serif; display: block; }
-.tech-style .attribute-grid { gap: 16px 12px !important; padding: 12px 8px !important; }
+.tech-style .attribute-grid { gap: 8px 12px !important; padding: 8px 8px !important; }
 .attribute-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
 .form-group.compact label { font-size: 10px; color: #999; margin-bottom: 2px; display: block; }
 .header-left label { font-size: 12px; font-weight: bold; cursor: pointer; }

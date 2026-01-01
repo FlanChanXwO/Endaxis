@@ -1987,13 +1987,10 @@ body.capture-mode .davinci-range {
   position: absolute;
   z-index: 100;
   pointer-events: none;
-  background: transparent;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
-  background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.9) 60%, transparent 60%),
-      linear-gradient(to right, rgba(255, 255, 255, 0.9) 60%, transparent 60%),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 60%, transparent 60%),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 60%, transparent 60%);
+  --g-h: linear-gradient(to right, rgba(255, 255, 255, 0.9) 60%, transparent 60%);
+  --g-v: linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 60%, transparent 60%);
+  background-image: var(--g-h), var(--g-h), var(--g-v), var(--g-v);
   background-position: top, bottom, left, right;
   background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
   background-size: 10px 1px, 10px 1px, 1px 10px, 1px 10px;
@@ -2003,6 +2000,7 @@ body.capture-mode .davinci-range {
    6. Track Rows & Actions
    ========================================================================== */
 .track-row {
+  --track-height: 50px;
   position: relative;
   flex: 1;
   min-height: var(--track-height);
@@ -2347,7 +2345,7 @@ body.capture-mode .davinci-range {
 .card-name {
   margin-top: 6px;
   font-size: 12px;
-  color: #444;
+  color: #e0e0e0;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
