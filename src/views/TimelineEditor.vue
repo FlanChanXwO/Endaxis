@@ -649,72 +649,73 @@ onUnmounted(() => {
 
     <el-dialog
         v-model="aboutDialogVisible"
-        title="关于 Endaxis"
-        width="500px"
+        width="560px"
         align-center
-        class="custom-dialog"
+        class="custom-dialog about-dialog-tech"
     >
+      <template #header>
+        <div class="module-deco header-type">
+          <span class="module-code">欢迎使用 ENDAXIS</span>
+          <span class="module-label">终末地排轴系统 v1.0.0</span>
+        </div>
+      </template>
+
       <div class="about-content">
-        <div class="about-section">
-          <h3>欢迎使用</h3>
-          <p>Endaxis 是一个专为《明日方舟：终末地》设计的可视化排轴工具。你可以通过拖拽技能、建立连线关系来规划战术流程。</p>
+        <div class="section-container tech-style no-margin">
+          <div class="panel-tag-mini">系统信息</div>
+          <div class="section-content-tech">
+            <p class="tech-p">本工具为《明日方舟：终末地》玩家自制作品，旨在提供可视化的战术序列规划环境。</p>
+            <p class="tech-p" style="margin-top: 5px;">当前核心算法已支持时延补偿与资源监控，由于项目处于早期开发阶段，部分干员属性使用了占位数据，请根据实机情况自行调整。</p>
+          </div>
+        </div>
+        <div class="section-container tech-style border-blue no-margin">
+          <div class="panel-tag-mini blue">相关资源</div>
+          <div class="link-grid">
+            <a href="https://www.bilibili.com/video/BV1gSSvB6E69/" target="_blank" class="tech-link-card">
+              <div class="link-svg-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="14" rx="2" ry="2"></rect><path d="M7 2l3 6M17 2l-3 6"></path></svg>
+              </div>
+              <div class="link-info">
+                <span class="link-title">视频教程</span>
+                <span class="link-desc">VIDEO GUIDE</span>
+              </div>
+            </a>
+            <a href="https://gx3qqg8r3jk.feishu.cn/wiki/TUTyw3s32iPsAXkCfl0cCE0VnOj" target="_blank" class="tech-link-card">
+              <div class="link-svg-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </div>
+              <div class="link-info">
+                <span class="link-title">文本教程</span>
+                <span class="link-desc">DOCUMENTATION</span>
+              </div>
+            </a>
+            <a href="https://github.com/Lieyuan621/Endaxis" target="_blank" class="tech-link-card">
+              <div class="link-svg-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+              </div>
+              <div class="link-info">
+                <span class="link-title">项目仓库</span>
+                <span class="link-desc">REPOSITORY</span>
+              </div>
+            </a>
+          </div>
         </div>
 
-        <div class="about-section">
-          <h3>项目概况</h3>
-          <p>
-            大部分干员可能仅有头像和默认占位数据。如果有意向提供详细数据可以联系我们。
-          </p>
+        <div class="section-container tech-style border-gold">
+          <div class="panel-tag-mini gold">友情链接</div>
+          <div class="friend-links">
+            <a href="https://www.zmdmap.com/" target="_blank" class="friend-tag">终末地互动地图</a>
+            <a href="https://ef.yituliu.cn/" target="_blank" class="friend-tag">终末地一图流</a>
+          </div>
         </div>
-
-        <div class="about-section">
-          <h3>🔗 链接与资源</h3>
-          <ul class="link-list">
-            <li>
-              <span class="link-label">📺 视频教程：</span>
-              <a href="https://www.bilibili.com/video/BV1gSSvB6E69/?vd_source=75ba4ea898b31481694ff91bb4513587" target="_blank" class="highlight-link">
-                点击观看 Bilibili 教程
-              </a>
-            </li>
-            <li>
-              <span class="link-label">📝 文本教程：</span>
-              <a href="https://gx3qqg8r3jk.feishu.cn/wiki/TUTyw3s32iPsAXkCfl0cCE0VnOj" target="_blank" class="highlight-link">
-                点击查看使用文档
-              </a>
-            </li>
-            <li>
-              <span class="link-label">💻 项目仓库：</span>
-              <a href="https://github.com/Lieyuan621/Endaxis" target="_blank" class="highlight-link">
-                GitHub 仓库
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="about-section">
-          <h3>🤝 友情链接</h3>
-          <ul class="link-list">
-            <li>
-              <span class="link-label">地图：</span>
-              <a href="https://www.zmdmap.com/" target="_blank" class="highlight-link">
-                终末地资源互动地图
-              </a>
-            </li>
-            <li>
-              <span class="link-label">一图流：</span>
-              <a href="https://ef.yituliu.cn/" target="_blank" class="highlight-link">
-                终末地一图流
-              </a>
-            </li>
-          </ul>
-        </div>
-
       </div>
 
       <template #footer>
-    <span class="dialog-footer">
-      <el-button type="primary" @click="aboutDialogVisible = false">开始使用</el-button>
-    </span>
+        <div class="about-footer">
+          <el-button type="primary" class="tech-confirm-btn" @click="aboutDialogVisible = false">
+            开始使用
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -802,34 +803,208 @@ onUnmounted(() => {
 .form-item label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc; }
 .hint { font-size: 12px; color: #888; margin-top: 6px; }
 
-/* 关于弹窗内容样式 */
-.about-content { display: flex; flex-direction: column; gap: 20px; color: #ccc; line-height: 1.6; }
-.about-section h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 15px; border-left: 3px solid #ffd700; padding-left: 8px; }
-.about-section p { margin: 0; font-size: 13px; }
-.link-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.link-list li { display: flex; align-items: center; font-size: 13px; }
-.link-label { color: #aaa; margin-right: 5px; }
-.highlight-link { color: #00e5ff; text-decoration: none; border-bottom: 1px dashed rgba(0, 229, 255, 0.5); transition: all 0.2s; }
-.highlight-link:hover { color: #fff; border-bottom-style: solid; }
+/* === 关于窗口样式 === */
+
+.about-dialog-tech :deep(.el-dialog__body) {
+  padding: 24px 20px;
+  background: #252525;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header-type {
+  border-left: 3px solid #ffd700;
+  padding-left: 10px;
+  line-height: 1.2;
+}
+
+.header-type .module-code {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  display: block;
+}
+
+.header-type .module-label {
+  font-size: 10px;
+  color: #ffd700;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+/* 基础容器样式 */
+.tech-style {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #ffd700;
+  padding: 16px;
+  position: relative;
+  overflow: visible;
+}
+
+.tech-style.border-blue { border-left-color: #00e5ff; }
+.tech-style.border-gold { border-left-color: #ffd700; }
+.no-margin { margin: 0; }
+
+/* 模块装饰 */
+.module-deco {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  border-left: 2px solid currentColor;
+  padding-left: 6px;
+}
+
+.module-code {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ffd700;
+}
+
+.module-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+.tech-p {
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  font-family: "Inter", "Source Sans Pro", sans-serif;
+}
+
+/* 链接网格 */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.tech-link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 92% 100%, 0 100%);
+}
+
+.tech-link-card:hover {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: #00e5ff;
+  transform: translateY(-2px);
+}
+
+.link-svg-icon {
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+}
+
+.link-title {
+  display: block;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.link-desc {
+  display: block;
+  color: #555;
+  font-size: 9px;
+  margin-top: 1px;
+}
+
+/* 友情链接标签 */
+.friend-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.friend-tag {
+  padding: 4px 14px;
+  background: rgba(255, 215, 0, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  font-size: 11px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: all 0.2s;
+  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
+}
+
+.friend-tag:hover {
+  background: #ffd700;
+  color: #000;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+}
+
+/* 底部装饰 */
+.about-footer {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.tech-confirm-btn {
+  padding: 0 24px !important;
+  font-weight: bold !important;
+  height: 36px;
+  border-radius: 4px;
+}
+
+/* 顶部悬浮标签 */
+.panel-tag-mini {
+  position: absolute;
+  right: 0;
+  top: -12px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-bottom: none;
+  font-size: 10px;
+  color: #888;
+  padding: 2px 10px;
+  font-family: sans-serif;
+  letter-spacing: 1px;
+  clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%);
+  z-index: 2;
+}
+.panel-tag-mini.blue { color: #00e5ff; border-color: rgba(0, 229, 255, 0.2); }
+.panel-tag-mini.gold { color: #ffd700; border-color: rgba(255, 215, 0, 0.2); }
 
 .share-import-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .dialog-hint {
-  color: #aaa;
-  font-size: 13px;
+  color: #888;
+  font-size: 12px;
   margin: 0;
 }
 :deep(.el-textarea__inner) {
-  background-color: #1f1f1f;
-  box-shadow: 0 0 0 1px #444 inset;
+  background-color: #1a1a1a;
+  box-shadow: inset 0 0 0 1px #333;
   color: #e0e0e0;
   border: none;
+  font-family: monospace;
 }
 :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px #ffd700 inset;
+  box-shadow: inset 0 0 0 1px #ffd700;
 }
 /* === 水印样式 === */
 .export-watermark {

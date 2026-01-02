@@ -251,12 +251,12 @@ function onNativeDragEnd() {
 
 <style scoped>
 .library-container {
-  padding: 20px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
   background-color: #252525;
   height: 100%;
-  gap: 20px;
+  gap: 15px;
   overflow-y: auto;
   transition: background-color 0.3s ease;
   scrollbar-width: none;

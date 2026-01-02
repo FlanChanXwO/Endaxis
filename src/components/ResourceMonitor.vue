@@ -617,7 +617,7 @@ watch(() => store.timelineScrollLeft, (newVal) => {
   gap: 10px 8px;
   margin-bottom: 20px;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: #1e1e1e;
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
   overflow: visible;
   white-space: normal;
