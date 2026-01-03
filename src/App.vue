@@ -174,4 +174,69 @@ body.is-lib-dragging .action-item-wrapper {
   color: #444 !important;
   font-size: 12px;
 }
+
+/* 下拉列表样式 */
+:root {
+  --el-border-radius-base: 0px !important;
+}
+
+.el-select {
+  --el-fill-color-blank: #111114 !important;
+  --el-border-color: #333 !important;
+  --el-border-color-hover: #444 !important;
+  --el-color-primary: #ffd700 !important;
+  --el-text-color-regular: #ccc !important;
+}
+
+.el-select .el-input__wrapper {
+  background-color: #111114 !important;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+  border-radius: 0 !important;
+}
+
+.el-select .el-input.is-focus .el-input__wrapper {
+  box-shadow: 0 0 0 1px #ffd700 inset !important;
+}
+
+.el-select .el-input__inner {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.el-popper.is-light,
+.el-select__popper.el-popper {
+  background-color: #1e1e1e !important;
+  border: 1px solid #444 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+.el-select-dropdown__item {
+  color: #aaa !important;
+  font-size: 13px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  transition: all 0.2s !important;
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover {
+  background-color: rgba(255, 215, 0, 0.1) !important;
+  color: #ffd700 !important;
+}
+
+.el-select-dropdown__item.selected {
+  color: #ffd700 !important;
+  font-weight: bold !important;
+  background-color: rgba(255, 215, 0, 0.05) !important;
+}
+
+.el-popper.is-light .el-popper__arrow::before {
+  background: #1e1e1e !important;
+  border: 1px solid #444 !important;
+}
+
+.el-select .el-input__suffix .el-icon {
+  color: #666 !important;
+}
 </style>
