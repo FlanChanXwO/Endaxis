@@ -137,7 +137,7 @@ body.is-lib-dragging .action-item-wrapper {
 /* 输入框与文本域样式 */
 .el-input__wrapper,
 .el-textarea__inner {
-  background-color: #111114 !important;
+  background-color: #16161a !important;
   border-radius: 0 !important;
   box-shadow: 0 0 0 1px #333 inset !important;
   border: none !important;
@@ -147,7 +147,7 @@ body.is-lib-dragging .action-item-wrapper {
 .el-input__wrapper.is-focus,
 .el-textarea__inner:focus {
   box-shadow: 0 0 0 1px #ffd700 inset !important;
-  background-color: #16161a !important;
+  background-color: #1f1f24 !important;
 }
 
 .el-input__count,
@@ -181,7 +181,7 @@ body.is-lib-dragging .action-item-wrapper {
 }
 
 .el-select {
-  --el-fill-color-blank: #111114 !important;
+  --el-fill-color-blank: #16161a !important;
   --el-border-color: #333 !important;
   --el-border-color-hover: #444 !important;
   --el-color-primary: #ffd700 !important;
@@ -189,7 +189,7 @@ body.is-lib-dragging .action-item-wrapper {
 }
 
 .el-select .el-input__wrapper {
-  background-color: #111114 !important;
+  background-color: #16161a !important;
   box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
   border-radius: 0 !important;
 }

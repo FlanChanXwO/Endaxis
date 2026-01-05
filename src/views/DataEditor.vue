@@ -303,7 +303,7 @@ function getSnapshotFromBase(char, type) {
   // 基础数值
   const snapshot = {
     duration: char[`${type}_duration`] || 1,
-    element: char[`${type}_element`],
+    element: char[`${type}_element`] || undefined,
     icon: char[`${type}_icon`] || "",
     allowedTypes: char[`${type}_allowed_types`] ? [...char[`${type}_allowed_types`]] : [],
     physicalAnomaly: char[`${type}_anomalies`] ? JSON.parse(JSON.stringify(char[`${type}_anomalies`])) : [],
@@ -511,6 +511,15 @@ function onSkillGaugeInput(event) {
 function saveData() {
   characterRoster.value.sort((a, b) => (b.rarity || 0) - (a.rarity || 0));
 
+  // Normalize optional fields so we don't persist placeholder sentinel values.
+  for (const char of characterRoster.value || []) {
+    for (const key of Object.keys(char)) {
+      if (key.endsWith('_element') && char[key] === '') {
+        delete char[key]
+      }
+    }
+  }
+
   const dataToSave = {
     ICON_DATABASE: iconDatabase.value,
     characterRoster: characterRoster.value,
@@ -525,13 +534,23 @@ function saveData() {
   <div class="cms-layout">
     <aside class="cms-sidebar">
       <div class="sidebar-tabs">
-        <button :class="{ active: editingMode === 'character' }" @click="setMode('character')">干员</button>
-        <button :class="{ active: editingMode === 'enemy' }" @click="setMode('enemy')">敌人</button>
+        <button
+          class="ea-btn ea-btn--glass-cut"
+          :class="{ 'is-active': editingMode === 'character' }"
+          :style="{ '--ea-btn-accent': 'var(--ea-gold)' }"
+          @click="setMode('character')"
+        >干员</button>
+        <button
+          class="ea-btn ea-btn--glass-cut"
+          :class="{ 'is-active': editingMode === 'enemy' }"
+          :style="{ '--ea-btn-accent': 'var(--ea-danger-soft)' }"
+          @click="setMode('enemy')"
+        >敌人</button>
       </div>
 
       <div class="sidebar-header">
         <h2>{{ editingMode === 'character' ? '干员数据' : '敌人数据' }}</h2>
-        <button class="btn-add" @click="editingMode === 'character' ? addNewCharacter() : addNewEnemy()">＋</button>
+        <button class="ea-btn ea-btn--icon ea-btn--icon-28 ea-btn--icon-plus" @click="editingMode === 'character' ? addNewCharacter() : addNewEnemy()">＋</button>
       </div>
       <div class="search-box">
         <input v-model="searchQuery" placeholder="搜索 ID 或名称..." />
@@ -589,10 +608,15 @@ function saveData() {
       </div>
 
       <div class="sidebar-footer">
-        <button class="btn-save" @click="saveData">
-          💾 保存数据
+        <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--fill-success" @click="saveData">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          保存数据
         </button>
-        <router-link to="/" class="btn-back">↩ 返回排轴器</router-link>
+        <router-link to="/" class="ea-btn ea-btn--block ea-btn--outline-muted">↩ 返回排轴器</router-link>
       </div>
     </aside>
 
@@ -609,7 +633,7 @@ function saveData() {
               <span class="id-tag">{{ selectedChar.id }}</span>
             </div>
           </div>
-          <button class="btn-danger" @click="deleteCurrentCharacter">删除此干员</button>
+          <button class="ea-btn ea-btn--md ea-btn--fill-danger" @click="deleteCurrentCharacter">删除此干员</button>
         </header>
 
         <div class="cms-tabs">
@@ -682,23 +706,23 @@ function saveData() {
               <div class="form-group"><label>名称</label><input v-model="selectedChar.name" type="text" /></div>
               <div class="form-group"><label>ID (Unique)</label><input :value="selectedChar.id" @input="updateCharId" type="text" /></div>
               <div class="form-group"><label>星级</label>
-                <select v-model.number="selectedChar.rarity"><option :value="6">6 ★</option><option :value="5">5 ★</option><option :value="4">4 ★</option></select>
+                <el-select v-model="selectedChar.rarity" size="large" style="width: 100%">
+                  <el-option :value="6" label="6 ★" />
+                  <el-option :value="5" label="5 ★" />
+                  <el-option :value="4" label="4 ★" />
+                </el-select>
               </div>
               <div class="form-group">
                 <label>元素属性</label>
-                <select v-model="selectedChar.element">
-                  <option v-for="elm in ELEMENTS" :key="elm.value" :value="elm.value">
-                    {{ elm.label }}
-                  </option>
-                </select>
+                <el-select v-model="selectedChar.element" size="large" style="width: 100%">
+                  <el-option v-for="elm in ELEMENTS" :key="elm.value" :label="elm.label" :value="elm.value" />
+                </el-select>
               </div>
               <div class="form-group">
                 <label>武器类型</label>
-                <select v-model="selectedChar.weapon">
-                  <option v-for="wpn in WEAPON_TYPES" :key="wpn.value" :value="wpn.value">
-                    {{ wpn.label }}
-                  </option>
-                </select>
+                <el-select v-model="selectedChar.weapon" size="large" style="width: 100%">
+                  <el-option v-for="wpn in WEAPON_TYPES" :key="wpn.value" :label="wpn.label" :value="wpn.value" />
+                </el-select>
               </div>
               <div class="form-group full-width"><label>头像路径 (Public Dir)</label><input v-model="selectedChar.avatar" type="text" /></div>
             </div>
@@ -725,9 +749,9 @@ function saveData() {
                 <input v-model="buff.key" placeholder="Key" />
                 <input v-model="buff.name" placeholder="显示名称" />
                 <input v-model="buff.path" placeholder="图标路径" class="flex-grow" />
-                <button class="btn-icon-del" @click="selectedChar.exclusive_buffs.splice(idx, 1)">×</button>
+                <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="selectedChar.exclusive_buffs.splice(idx, 1)">×</button>
               </div>
-              <button class="btn-small-add" @click="selectedChar.exclusive_buffs.push({key:'',name:'',path:''})">+ 添加专属效果</button>
+              <button class="ea-btn ea-btn--block ea-btn--dashed-muted" @click="selectedChar.exclusive_buffs.push({key:'',name:'',path:''})">+ 添加专属效果</button>
             </div>
           </div>
 
@@ -740,7 +764,7 @@ function saveData() {
             <div v-for="(variant, idx) in (selectedChar.variants || [])" :key="idx" class="variant-card">
               <div class="variant-header">
                 <span class="variant-idx">#{{ idx + 1 }}</span>
-                <button class="btn-icon-del" @click="removeVariant(idx)">×</button>
+                <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeVariant(idx)">×</button>
               </div>
 
               <div class="form-grid three-col">
@@ -750,9 +774,9 @@ function saveData() {
                 </div>
                 <div class="form-group">
                   <label>动作类型 (切换重置)</label>
-                  <select v-model="variant.type" @change="onVariantTypeChange(variant)">
-                    <option v-for="t in VARIANT_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
-                  </select>
+                  <el-select v-model="variant.type" size="large" style="width: 100%" @change="onVariantTypeChange(variant)">
+                    <el-option v-for="t in VARIANT_TYPES" :key="t.value" :label="t.label" :value="t.value" />
+                  </el-select>
                 </div>
                 <div class="form-group">
                   <label>唯一标识 (ID后缀)</label>
@@ -788,9 +812,9 @@ function saveData() {
                     <div class="t-group"><label style="color:#ff7875">失衡值</label><input type="number" v-model.number="tick.stagger" class="mini-input"></div>
                     <div class="t-group"><label style="color:#ffd700">回复技力</label><input type="number" v-model.number="tick.sp" class="mini-input"></div>
                   </div>
-                  <button class="btn-icon-del" @click="removeVariantDamageTick(variant, tIdx)">×</button>
+                  <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeVariantDamageTick(variant, tIdx)">×</button>
                 </div>
-                <button class="btn-add-row" style="margin-top: 5px;" @click="addVariantDamageTick(variant)">+ 添加判定点</button>
+                <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--dashed-panel ea-btn--radius-6" style="margin-top: 5px;" @click="addVariantDamageTick(variant)">+ 添加判定点</button>
               </div>
 
               <div class="checkbox-grid" style="margin-top: 15px;">
@@ -811,11 +835,11 @@ function saveData() {
                     <div v-for="(item, cIndex) in row" :key="cIndex" class="editor-card">
                       <div class="card-header">
                         <span class="card-label">R{{rIndex+1}}:C{{cIndex+1}}</span>
-                        <button class="btn-icon-del" @click="removeVariantEffect(variant, rIndex, cIndex)">×</button>
+                        <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeVariantEffect(variant, rIndex, cIndex)">×</button>
                       </div>
-                      <select v-model="item.type" class="card-input full-width-mb">
-                        <option v-for="opt in getVariantAvailableOptions(variant)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
+                      <el-select v-model="item.type" size="small" class="card-select full-width-mb" style="width: 100%">
+                        <el-option v-for="opt in getVariantAvailableOptions(variant)" :key="opt.value" :label="opt.label" :value="opt.value" />
+                      </el-select>
 
                       <div class="card-props-grid">
                         <div class="prop-item full-span">
@@ -842,14 +866,14 @@ function saveData() {
                       </div>
 
                     </div>
-                    <button class="btn-add-col" @click="addVariantEffect(variant, rIndex)">+</button>
+                    <button class="ea-btn ea-btn--icon ea-btn--icon-40 ea-btn--icon-plus" @click="addVariantEffect(variant, rIndex)">+</button>
                   </div>
-                  <button class="btn-add-row" @click="addVariantRow(variant)" :disabled="getVariantAvailableOptions(variant).length === 0">+ 新增效果行</button>
+                  <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--dashed-panel ea-btn--radius-6" @click="addVariantRow(variant)" :disabled="getVariantAvailableOptions(variant).length === 0">+ 新增效果行</button>
                 </div>
               </div>
             </div>
 
-            <button class="btn-add-row" @click="addVariant" style="margin-top: 20px;">+ 添加新变体动作</button>
+            <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--dashed-panel ea-btn--radius-6" @click="addVariant" style="margin-top: 20px;">+ 添加新变体动作</button>
           </div>
 
           <template v-for="type in ['attack', 'skill', 'link', 'ultimate', 'execution']" :key="type">
@@ -858,13 +882,10 @@ function saveData() {
               <div class="form-grid three-col">
                 <div class="form-group" v-if="type === 'skill' || type === 'ultimate'">
                   <label>技能属性</label>
-                  <select v-model="selectedChar[`${type}_element`]">
-                    <option :value="undefined">默认 (跟随干员)</option>
-
-                    <option v-for="elm in ELEMENTS" :key="elm.value" :value="elm.value">
-                      {{ elm.label }}
-                    </option>
-                  </select>
+                  <el-select v-model="selectedChar[`${type}_element`]" size="large" placeholder="默认 (跟随干员)" style="width: 100%">
+                    <el-option value="" label="默认 (跟随干员)" />
+                    <el-option v-for="elm in ELEMENTS" :key="elm.value" :label="elm.label" :value="elm.value" />
+                  </el-select>
                 </div>
 
                 <div class="form-group" v-if="['skill', 'link', 'ultimate'].includes(type)"><label>自定义图标路径</label><input v-model="selectedChar[`${type}_icon`]" type="text"/></div>
@@ -901,9 +922,9 @@ function saveData() {
                     <div class="t-group"><label style="color:#ff7875">失衡值</label><input type="number" v-model.number="tick.stagger" class="mini-input"></div>
                     <div class="t-group"><label style="color:#ffd700">回复技力</label><input type="number" v-model.number="tick.sp" class="mini-input"></div>
                   </div>
-                  <button class="btn-icon-del" @click="removeDamageTick(selectedChar, type, tIdx)">×</button>
+                  <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeDamageTick(selectedChar, type, tIdx)">×</button>
                 </div>
-                <button class="btn-add-row" style="margin-top: 10px;" @click="addDamageTick(selectedChar, type)">+ 添加判定点</button>
+                <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--dashed-panel ea-btn--radius-6" style="margin-top: 10px;" @click="addDamageTick(selectedChar, type)">+ 添加判定点</button>
               </div>
 
               <h3 class="section-title">效果池配置</h3>
@@ -926,11 +947,11 @@ function saveData() {
                     <div v-for="(item, cIndex) in row" :key="cIndex" class="editor-card">
                       <div class="card-header">
                         <span class="card-label">R{{rIndex+1}}:C{{cIndex+1}}</span>
-                        <button class="btn-icon-del" @click="removeAnomaly(selectedChar, type, rIndex, cIndex)">×</button>
+                        <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeAnomaly(selectedChar, type, rIndex, cIndex)">×</button>
                       </div>
-                      <select v-model="item.type" class="card-input full-width-mb">
-                        <option v-for="opt in getAvailableAnomalyOptions(type)" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
+                      <el-select v-model="item.type" size="small" class="card-select full-width-mb" style="width: 100%">
+                        <el-option v-for="opt in getAvailableAnomalyOptions(type)" :key="opt.value" :label="opt.label" :value="opt.value" />
+                      </el-select>
 
                       <div class="card-props-grid">
                         <div class="prop-item full-span">
@@ -957,9 +978,9 @@ function saveData() {
                       </div>
 
                     </div>
-                    <button class="btn-add-col" @click="addAnomalyToRow(selectedChar, type, rIndex)">+</button>
+                    <button class="ea-btn ea-btn--icon ea-btn--icon-40 ea-btn--icon-plus" @click="addAnomalyToRow(selectedChar, type, rIndex)">+</button>
                   </div>
-                  <button class="btn-add-row" @click="addAnomalyRow(selectedChar, type)" :disabled="getAvailableAnomalyOptions(type).length === 0">+ 新增效果行</button>
+                  <button class="ea-btn ea-btn--block ea-btn--lg ea-btn--dashed-panel ea-btn--radius-6" @click="addAnomalyRow(selectedChar, type)" :disabled="getAvailableAnomalyOptions(type).length === 0">+ 新增效果行</button>
                 </div>
               </div>
             </div>
@@ -979,7 +1000,7 @@ function saveData() {
               <span class="id-tag">{{ selectedEnemy.id }}</span>
             </div>
           </div>
-          <button class="btn-danger" @click="deleteCurrentEnemy">删除此敌人</button>
+          <button class="ea-btn ea-btn--md ea-btn--fill-danger" @click="deleteCurrentEnemy">删除此敌人</button>
         </header>
 
         <div class="form-section">
@@ -989,21 +1010,25 @@ function saveData() {
             <div class="form-group"><label>ID</label><input :value="selectedEnemy.id" @change="updateEnemyId" /></div>
             <div class="form-group">
               <label>等阶</label>
-              <select v-model="selectedEnemy.tier" :style="{ color: ENEMY_TIERS.find(t=>t.value===selectedEnemy.tier)?.color }">
-                <option v-for="t in ENEMY_TIERS" :key="t.value" :value="t.value">
-                  {{ t.label }}
-                </option>
-              </select>
+              <el-select
+                v-model="selectedEnemy.tier"
+                size="large"
+                class="enemy-tier-select"
+                style="width: 100%"
+                :style="{ '--ea-tier-color': ENEMY_TIERS.find(t=>t.value===selectedEnemy.tier)?.color }"
+              >
+                <el-option v-for="t in ENEMY_TIERS" :key="t.value" :label="t.label" :value="t.value" />
+              </el-select>
             </div>
 
             <div class="form-group">
               <label>分类</label>
               <div style="display: flex; gap: 5px;">
-                <select v-model="selectedEnemy.category" style="flex-grow: 1;">
-                  <option v-for="cat in enemyCategories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
+                <el-select v-model="selectedEnemy.category" size="large" style="flex-grow: 1;">
+                  <el-option v-for="cat in enemyCategories" :key="cat" :label="cat" :value="cat" />
+                </el-select>
                 <button
-                    class="btn-icon-add"
+                    class="ea-btn ea-btn--icon ea-btn--icon-38 ea-btn--icon-plus"
                     @click="quickAddCategory"
                     title="新建分类"
                 >+</button>
@@ -1033,18 +1058,29 @@ function saveData() {
 
 /* Sidebar */
 .cms-sidebar { width: 300px; background-color: #252526; border-right: 1px solid #333; display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar-tabs { display: flex; background: #1e1e1e; border-bottom: 1px solid #333; }
-.sidebar-tabs button { flex: 1; background: transparent; border: none; color: #888; padding: 12px; cursor: pointer; font-weight: bold; border-bottom: 2px solid transparent; transition: all 0.2s; }
-.sidebar-tabs button:hover { color: #ccc; background: #252526; }
-.sidebar-tabs button.active { color: #ffd700; border-bottom-color: #ffd700; background: #2b2b2b; }
+.sidebar-tabs { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #1e1e1e; border-bottom: 1px solid #333; }
+.sidebar-tabs .ea-btn { flex: 1; justify-content: center; height: 34px; }
 
 .sidebar-header { padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #2b2b2b; }
 .sidebar-header h2 { margin: 0; font-size: 16px; color: #ffd700; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-.btn-add { background: #3a3a3a; border: 1px solid #555; color: #fff; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
-.btn-add:hover { background: #ffd700; border-color: #ffd700; color: #000; }
 .search-box { padding: 10px; border-bottom: 1px solid #333; background: #252526; }
-.search-box input { width: 100%; padding: 8px 12px; box-sizing: border-box; background: #1e1e1e; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 13px; }
-.search-box input:focus { border-color: #666; outline: none; }
+.search-box input {
+  width: 100%;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: #16161a;
+  border: none;
+  box-shadow: 0 0 0 1px #333 inset;
+  color: #fff;
+  border-radius: 0;
+  font-size: 13px;
+  transition: box-shadow 0.2s, background-color 0.2s;
+}
+.search-box input:focus {
+  box-shadow: 0 0 0 1px #ffd700 inset;
+  outline: none;
+  background-color: #1f1f24;
+}
 .enemy-group { margin-bottom: 15px; }
 .group-title { font-size: 11px; color: #888; font-weight: bold; text-transform: uppercase; padding: 4px 8px; background: #2b2b2b; border-radius: 4px; margin-bottom: 6px; display: flex; justify-content: space-between; }
 .group-count { color: #555; }
@@ -1069,10 +1105,6 @@ function saveData() {
 
 /* Sidebar Footer */
 .sidebar-footer { padding: 15px; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 10px; background: #2b2b2b; }
-.btn-save { width: 100%; padding: 10px; background: #2e7d32; border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn-save:hover { background: #388e3c; }
-.btn-back { text-align: center; color: #888; text-decoration: none; font-size: 13px; display: block; padding: 8px; border: 1px solid #444; border-radius: 4px; transition: all 0.2s; }
-.btn-back:hover { color: #fff; border-color: #666; background: #333; }
 
 /* Main Content */
 .cms-content { flex-grow: 1; overflow-y: auto; padding: 30px 40px; background-color: #1e1e1e; }
@@ -1086,8 +1118,6 @@ function saveData() {
 .header-titles { display: flex; flex-direction: column; gap: 5px; }
 .edit-title { margin: 0; font-size: 28px; font-weight: 700; color: #f0f0f0; }
 .id-tag { font-size: 14px; color: #666; font-family: 'Roboto Mono', monospace; background: #252526; padding: 2px 8px; border-radius: 4px; border: 1px solid #333; align-self: flex-start; }
-.btn-danger { background: #3a1a1a; color: #ff7875; border: 1px solid #5c2b2b; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
-.btn-danger:hover { background: #d32f2f; color: white; border-color: #d32f2f; }
 
 /* Tabs */
 .cms-tabs { display: flex; gap: 2px; margin-bottom: 20px; border-bottom: 2px solid #333; }
@@ -1106,8 +1136,25 @@ function saveData() {
 .form-group { display: flex; flex-direction: column; }
 .form-group.full-width { grid-column: 1 / -1; }
 .form-group label { margin-bottom: 8px; color: #aaa; font-size: 12px; font-weight: 500; }
-.form-group input, .form-group select { background: #1a1a1a; border: 1px solid #444; color: #f0f0f0; padding: 10px 12px; border-radius: 4px; font-size: 14px; transition: border-color 0.2s; }
-.form-group input:focus, .form-group select:focus { border-color: #ffd700; outline: none; background: #111; }
+.form-group input {
+  background: #16161a;
+  border: none;
+  box-shadow: 0 0 0 1px #333 inset;
+  color: #f0f0f0;
+  padding: 10px 12px;
+  border-radius: 0;
+  font-size: 14px;
+  transition: box-shadow 0.2s, background-color 0.2s;
+}
+.form-group input:focus {
+  box-shadow: 0 0 0 1px #ffd700 inset;
+  outline: none;
+  background: #1f1f24;
+}
+
+:deep(.enemy-tier-select .el-input__inner) {
+  color: var(--ea-tier-color) !important;
+}
 
 /* Variant Card Style */
 .variant-card { background: #2b2b2b; border: 1px solid #444; border-radius: 6px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #ffd700; }
@@ -1122,46 +1169,36 @@ function saveData() {
 .checkbox-wrapper label { margin: 0; cursor: pointer; color: #ccc; }
 .exclusive-list { display: flex; flex-direction: column; gap: 10px; }
 .exclusive-row { display: flex; gap: 10px; align-items: center; }
-.exclusive-row input { background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; font-size: 13px; }
+.exclusive-row input {
+  background: #16161a;
+  border: none;
+  box-shadow: 0 0 0 1px #333 inset;
+  color: #fff;
+  padding: 8px;
+  border-radius: 0;
+  font-size: 13px;
+  transition: box-shadow 0.2s, background-color 0.2s;
+}
+.exclusive-row input:focus {
+  box-shadow: 0 0 0 1px #ffd700 inset;
+  outline: none;
+  background: #1f1f24;
+}
 .flex-grow { flex-grow: 1; }
-.btn-icon-del { width: 24px; height: 24px; background: #3a1a1a; border: 1px solid #5c2b2b; color: #ff7875; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.2s; }
-.btn-icon-del:hover { background: #d32f2f; color: white; border-color: #d32f2f; }
-.btn-small-add { background: #333; border: 1px dashed #666; color: #aaa; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 13px; transition: all 0.2s; }
-.btn-small-add:hover { border-color: #ffd700; color: #ffd700; background: #3a3a3a; }
 .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; background: #1a1a1a; padding: 15px; border-radius: 6px; border: 1px solid #333; margin-bottom: 20px; }
 .cb-item { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #bbb; cursor: pointer; user-select: none; padding: 5px; border-radius: 4px; transition: background 0.1s; }
 .cb-item:hover { background: #252526; }
 .cb-item input { accent-color: #ffd700; width: 16px; height: 16px; }
 .cb-item.exclusive { color: #ffd700; }
 
-.btn-icon-add {
-  width: 38px;
-  background: #333;
-  border: 1px solid #555;
-  color: #ffd700;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.btn-icon-add:hover {
-  border-color: #ffd700;
-  background: rgba(255, 215, 0, 0.1);
-}
 
 /* Matrix Editor */
 .matrix-editor-area { margin-top: 25px; border-top: 1px dashed #444; padding-top: 20px; }
 .anomalies-grid-editor { display: flex; flex-direction: column; gap: 10px; }
 .editor-row { display: flex; flex-wrap: wrap; gap: 10px; background: #1f1f1f; padding: 10px; border-radius: 6px; border: 1px solid #333; align-items: center; }
-.card-input { width: 100%; background: #1a1a1a; border: 1px solid #333; color: #ddd; font-size: 12px; padding: 4px; border-radius: 3px; }
-.btn-add-col { width: 40px; background: #252526; border: 1px dashed #444; color: #666; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; }
-.btn-add-col:hover { border-color: #ffd700; color: #ffd700; background: #2b2b2b; }
-.btn-add-row { width: 100%; padding: 10px; background: #252526; border: 1px dashed #444; color: #888; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-.btn-add-row:hover:not(:disabled) { border-color: #ffd700; color: #ffd700; background: #2b2b2b; }
-.btn-add-row:disabled { cursor: not-allowed; opacity: 0.5; }
+.card-select { width: 100%; }
+:deep(.card-select .el-input__wrapper) { padding: 0 8px; min-height: 24px; }
+:deep(.card-select .el-input__inner) { font-size: 12px; height: 24px; line-height: 24px; }
 
 /* === 卡片样式 === */
 .editor-card {
@@ -1224,10 +1261,15 @@ function saveData() {
 .input-with-unit {
   display: flex;
   align-items: center;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 3px;
+  background: #16161a;
+  border: none;
+  box-shadow: 0 0 0 1px #333 inset;
+  border-radius: 0;
   overflow: hidden;
+}
+.input-with-unit:focus-within {
+  box-shadow: 0 0 0 1px #ffd700 inset;
+  background: #1f1f24;
 }
 
 .mini-input {
@@ -1241,7 +1283,7 @@ function saveData() {
   height: 20px;
 }
 .mini-input:focus {
-  background: #222 !important;
+  background: transparent !important;
   outline: none;
 }
 
@@ -1249,7 +1291,7 @@ function saveData() {
   font-size: 10px;
   color: #666;
   padding-right: 4px;
-  background: #1a1a1a;
+  background: transparent;
   user-select: none;
 }
 

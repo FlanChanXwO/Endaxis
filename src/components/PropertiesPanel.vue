@@ -518,7 +518,7 @@ function handleStartConnection(id) {
             <span class="module-label">失衡: {{ totalStagger }} | 技力: {{ totalSpGain }}</span>
           </div>
           <div class="spacer"></div>
-          <button class="icon-btn-add red" @click.stop="addDamageTick">
+          <button class="ea-btn ea-btn--icon ea-btn--icon-22 ea-btn--icon-plus ea-btn--icon-plus-red" @click.stop="addDamageTick">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
           <el-icon :class="{ 'is-rotated': isTicksExpanded }" class="toggle-arrow"><ArrowRight /></el-icon>
@@ -529,7 +529,7 @@ function handleStartConnection(id) {
             <div v-for="(tick, index) in (targetData.damageTicks || [])" :key="index" class="tick-item red-theme">
               <div class="tick-header">
                 <span class="tick-idx">HIT {{ index + 1 }}</span>
-                <button class="remove-btn" @click="removeDamageTick(index)">×</button>
+                <button type="button" class="ea-btn ea-btn--icon ea-btn--icon-18 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeDamageTick(index)">×</button>
               </div>
               <div class="tick-row">
                 <div class="tick-col">
@@ -558,7 +558,7 @@ function handleStartConnection(id) {
             <span class="module-label">活跃条目: {{ customBarsList.length }}</span>
           </div>
           <div class="spacer"></div>
-          <button class="icon-btn-add cyan" @click.stop="addCustomBar">
+          <button class="ea-btn ea-btn--icon ea-btn--icon-22 ea-btn--icon-plus ea-btn--icon-plus-cyan" @click.stop="addCustomBar">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
           <el-icon :class="{ 'is-rotated': isBarsExpanded }" class="toggle-arrow"><ArrowRight /></el-icon>
@@ -569,7 +569,7 @@ function handleStartConnection(id) {
             <div v-for="(bar, index) in customBarsList" :key="index" class="tick-item blue-theme">
               <div class="tick-header">
                 <input type="text" :value="bar.text" @input="e => updateCustomBarItem(index, 'text', e.target.value)" placeholder="条目名称" class="simple-input">
-                <button class="remove-btn" @click="removeCustomBar(index)">×</button>
+                <button type="button" class="ea-btn ea-btn--icon ea-btn--icon-18 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeCustomBar(index)">×</button>
               </div>
               <div class="tick-row">
                 <div class="tick-col">
@@ -602,7 +602,7 @@ function handleStartConnection(id) {
                     </div>
                   </template>
                 </draggable>
-                <button class="add-to-row-btn" @click="addEffectToRow(rowIndex)" title="追加">
+                <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--icon-plus" @click="addEffectToRow(rowIndex)" title="追加">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -657,11 +657,11 @@ function handleStartConnection(id) {
           </div>
 
           <div class="editor-actions">
-            <button v-if="!isLibraryMode" class="action-btn link-style" @click.stop="handleStartConnection(activeAnomalyId)"
+            <button v-if="!isLibraryMode" class="ea-btn ea-btn--sm ea-btn--glass-rect ea-btn--accent-gold ea-btn--glass-rect-accent" @click.stop="handleStartConnection(activeAnomalyId)"
                     :class="{ 'is-linking': connectionHandler.isDragging.value && connectionHandler.state.value.sourceId === activeAnomalyId }">
               连线
             </button>
-            <button class="action-btn delete-style" @click="removeEffect(currentSelectedCoords.rowIndex, currentSelectedCoords.colIndex)">删除</button>
+            <button class="ea-btn ea-btn--sm ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="removeEffect(currentSelectedCoords.rowIndex, currentSelectedCoords.colIndex)">删除</button>
           </div>
         </div>
       </div>
@@ -680,7 +680,7 @@ function handleStartConnection(id) {
 
           <div class="spacer"></div>
 
-          <button class="main-link-btn" @click.stop="handleStartConnection(store.selectedActionId)" :class="{ 'is-linking': connectionHandler.isDragging.value && connectionHandler.state.value.sourceId === store.selectedActionId }">
+          <button class="ea-btn ea-btn--sm ea-btn--glass-rect ea-btn--accent-gold ea-btn--glass-rect-accent" @click.stop="handleStartConnection(store.selectedActionId)" :class="{ 'is-linking': connectionHandler.isDragging.value && connectionHandler.state.value.sourceId === store.selectedActionId }">
             <span class="plus-icon"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
             {{ (connectionHandler.isDragging.value) ? '选择目标' : '新建连线' }}
           </button>
@@ -726,7 +726,7 @@ function handleStartConnection(id) {
 
             <div class="conn-row-actions">
               <template v-if="conn.isOutgoing && conn.rawConnection.fromEffectIndex != null">
-                <div class="consume-tag"
+                <div class="ea-btn ea-btn--glass-rect ea-btn--glass-rect-tag ea-btn--accent-gold ea-btn--glass-rect-hover-accent"
                      :class="{ 'active': conn.rawConnection.isConsumption }"
                      @click="store.updateConnection(conn.id, { isConsumption: !conn.rawConnection.isConsumption })">
                   {{ conn.rawConnection.isConsumption ? '被消耗' : '消耗' }}
@@ -747,7 +747,7 @@ function handleStartConnection(id) {
               </template>
 
               <div class="spacer"></div>
-              <button class="btn-del-conn" @click="store.removeConnection(conn.id)">×</button>
+              <button class="ea-btn ea-btn--icon ea-btn--icon-18 ea-btn--glass-rect ea-btn--accent-red ea-btn--glass-rect-danger" @click="store.removeConnection(conn.id)">×</button>
             </div>
 
           </div>
@@ -794,22 +794,8 @@ function handleStartConnection(id) {
 .empty-hint { font-size: 12px; color: #555; text-align: center; padding: 10px; font-style: italic; }
 
 /* Buttons & Inputs */
-.icon-btn-add { background: rgba(255, 255, 255, 0.05) !important; color: inherit !important; border: 1px solid currentColor !important; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 !important; transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); clip-path: polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%); }
-.icon-btn-add:hover { filter: brightness(1.2); cursor: pointer; }
-.icon-btn-add.red { color: #ff7875 !important; border-color: #ff7875 !important; background: rgba(255, 120, 117, 0.1) !important; }
-.icon-btn-add.cyan { color: #00e5ff !important; border-color: #00e5ff !important; background: rgba(0, 229, 255, 0.1) !important; }
-.icon-btn-add.red:hover { background: rgba(255, 120, 117, 0.3) !important; box-shadow: 0 0 12px rgba(255, 120, 117, 0.5); }
-.icon-btn-add.cyan:hover { background: rgba(0, 229, 255, 0.3) !important; box-shadow: 0 0 12px rgba(0, 229, 255, 0.5); }
-.remove-btn { background: none; border: none; color: #666; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; }
-.remove-btn:hover { color: #fff; }
 .simple-input { background: transparent; border: none; border-bottom: 1px solid #555; color: #ccc; width: 100%; font-size: 12px; padding: 0 0 2px 0; }
 .simple-input:focus { outline: none; border-color: #00e5ff; }
-.action-btn { flex: 1; padding: 5px 12px; cursor: pointer; font-size: 11px; border: 1px solid; background: transparent; transition: all 0.2s; font-weight: bold; text-transform: uppercase; }
-.action-btn.link-style { border-color: rgba(255, 215, 0, 0.5); color: #ffd700; clip-path: polygon(0 0, 85% 0, 100% 30%, 100% 100%, 0 100%); }
-.action-btn.link-style:hover { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
-.action-btn.link-style.is-linking { background: #ffd700; color: #000; border-color: #ffd700; }
-.action-btn.delete-style { border-color: rgba(255, 77, 79, 0.4); color: #ff4d4f; clip-path: polygon(0 0, 100% 0, 100% 100%, 15% 100%, 0 70%); }
-.action-btn.delete-style:hover { background: rgba(255, 77, 79, 0.15); border-color: #ff4d4f; }
 
 /* Ticks & Anomalies List */
 .tick-item { background: rgba(255, 255, 255, 0.02) !important; border: 1px solid rgba(255, 255, 255, 0.05) !important; border-left: 3px solid rgba(255, 255, 255, 0.2) !important; padding: 10px !important; margin-bottom: 10px !important; position: relative; backdrop-filter: blur(5px); transition: all 0.2s; clip-path: polygon(0 0, 100% 0, 100% 90%, 97% 100%, 0 100%); }
@@ -824,8 +810,6 @@ function handleStartConnection(id) {
 .anomaly-editor-row:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
 .row-handle { color: #555; cursor: grab; padding: 0 2px; }
 .row-items-list { display: flex; flex-wrap: wrap; gap: 4px; flex-grow: 1; }
-.add-to-row-btn { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #888; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; clip-path: polygon(0 0, 100% 0, 100% 100%, 25% 100%, 0 75%); }
-.add-to-row-btn:hover { color: #ffd700; border-color: #ffd700; background: rgba(255, 215, 0, 0.1) !important; }
 .add-effect-bar { width: 100%; background: rgba(255, 255, 255, 0.03) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #888 !important; font-size: 11px !important; padding: 8px !important; margin-top: 10px; border-radius: 0 !important; cursor: pointer; transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .add-effect-bar:hover { background: rgba(255, 255, 255, 0.08) !important; color: #ccc !important; border-color: #ffd700 !important; }
 .add-effect-bar::before, .add-effect-bar::after { content: ''; position: absolute; width: 4px; height: 100%; border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s; }
@@ -852,12 +836,10 @@ function handleStartConnection(id) {
 .opt-row { display: flex; align-items: center; gap: 6px; }
 .opt-row img { width: 16px; height: 16px; }
 .editor-actions { display: flex; gap: 8px; }
+.editor-actions .ea-btn { flex: 1; }
 
 /* Connection Cards - Optimized */
 .connection-header-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.main-link-btn { display: flex; align-items: center; gap: 6px; min-width: 80px; justify-content: center; background: rgba(255, 215, 0, 0.1) !important; border: 1px solid rgba(255, 215, 0, 0.4) !important; color: #ffd700 !important; padding: 6px 12px !important; font-size: 11px !important; clip-path: polygon(0 0, 92% 0, 100% 25%, 100% 100%, 8% 100%, 0 75%); }
-.main-link-btn:hover { background: rgba(255, 215, 0, 0.2) !important; border-color: #ffd700 !important; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); transform: translateY(-1px); }
-.main-link-btn.is-linking { background: #ffd700; color: #000; border-style: solid; animation: pulse 1s infinite; }
 .plus-icon { display: flex; align-items: center; }
 .connections-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .link-ctrl-deco { display: flex; align-items: center; gap: 8px; opacity: 0.8; flex-shrink: 0; min-width: 65px; }
@@ -890,16 +872,9 @@ function handleStartConnection(id) {
 .mini-select:hover { color: #ffd700; }
 .mini-select option { background: #2a2a2a; color: #eee; }
 .port-arrow { font-size: 8px; color: #444; letter-spacing: -1px; font-weight: bold; }
-.consume-tag { font-size: 10px; padding: 0 6px; border: 1px solid rgba(255, 255, 255, 0.1); color: #888; cursor: pointer; height: 22px; line-height: 22px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background-color: rgba(255, 255, 255, 0.02) !important; white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; justify-content: center; clip-path: polygon(0 0, 100% 0, 100% 70%, 85% 100%, 0 100%); }
-.consume-tag:hover { background-color: rgba(255, 255, 255, 0.08) !important; border-color: rgba(255, 215, 0, 0.4); color: #eee; transform: translateY(-1px); }
-.consume-tag.active { background-color: rgba(255, 215, 0, 0.1) !important; border-color: #ffd700 !important; color: #ffd700; font-weight: bold; }
-.consume-tag.active:hover { background-color: rgba(255, 215, 0, 0.2) !important; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); color: #fff; }
 .offset-mini { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.btn-del-conn { background: rgba(255, 77, 79, 0.1) !important; border: 1px solid rgba(255, 77, 79, 0.2) !important; color: #ff4d4f !important; font-size: 12px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 2px; cursor: pointer; transition: all 0.2s; opacity: 0.6; }
-.btn-del-conn:hover { opacity: 1; background: #ff4d4f !important; color: #fff !important; }
 .spacer { flex: 1; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 :deep(.is-rotated) { transform: rotate(90deg); transition: transform 0.2s; }
 </style>

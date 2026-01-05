@@ -321,15 +321,17 @@ watch(() => store.timelineScrollLeft, (newVal) => {
 
       <div class="category-tabs">
         <button
-            class="cat-tab"
-            :class="{ active: activeCategoryTab === 'ALL' }"
+            class="ea-btn ea-btn--glass-cut"
+            :class="{ 'is-active': activeCategoryTab === 'ALL' }"
+            :style="{ '--ea-btn-accent': 'var(--ea-gold)' }"
             @click="activeCategoryTab = 'ALL'"
         >全部</button>
         <button
             v-for="cat in enemyCategories"
             :key="cat"
-            class="cat-tab"
-            :class="{ active: activeCategoryTab === cat }"
+            class="ea-btn ea-btn--glass-cut"
+            :class="{ 'is-active': activeCategoryTab === cat }"
+            :style="{ '--ea-btn-accent': 'var(--ea-gold)' }"
             @click="activeCategoryTab = cat"
         >
           {{ cat }}
@@ -625,30 +627,11 @@ watch(() => store.timelineScrollLeft, (newVal) => {
   white-space: normal;
 }
 
-.cat-tab {
+.category-tabs .ea-btn {
   flex: none;
-  background: transparent;
-  border: none;
-  color: #666;
-  padding: 6px 16px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
   margin-bottom: 2px;
-}
-
-.cat-tab:hover {
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.cat-tab.active {
-  color: #000;
-  background: #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  --ea-btn-py: 6px;
+  --ea-btn-px: 16px;
 }
 
 /* --- 分组标题样式 --- */

@@ -182,25 +182,26 @@ function increment() {
 
 <style scoped>
 .custom-number-input {
-  --default-border-color: #555;
-  --hover-border-color: #999;
-  --active-color: var(--default-border-color);
+  --default-border-color: #333;
+  --hover-border-color: #444;
+  --active-color: #ffd700;
   --text-color: white;
 
   display: flex;
   align-items: center;
-  background-color: #222;
-  border: 1px solid var(--default-border-color);
-  border-radius: 4px;
+  background-color: #16161a;
+  border: none;
+  box-shadow: 0 0 0 1px var(--default-border-color) inset;
+  border-radius: 0;
   overflow: hidden;
   height: 28px;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.2s, background-color 0.2s;
   width: 100%;
 }
 
 .custom-number-input.has-hover:hover {
-  border-color: var(--hover-border-color);
+  box-shadow: 0 0 0 1px var(--hover-border-color) inset;
 }
 
 .custom-number-input:focus {
@@ -209,7 +210,8 @@ function increment() {
 
 .custom-number-input.has-hover:focus-within,
 .custom-number-input:focus-within {
-  border-color: var(--active-color);
+  box-shadow: 0 0 0 1px var(--active-color) inset;
+  background-color: #1f1f24;
 }
 
 .prepend-slot {
@@ -223,15 +225,15 @@ function increment() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-left: 1px solid #555;
+  box-shadow: -1px 0 0 rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.2s, background-color 0.2s;
 }
 
 .control-btn {
-  background-color: #3a3a3a;
+  background-color: transparent;
   border: none;
-  color: #ccc;
+  color: #666;
   cursor: pointer;
   width: 18px;
   height: 50%;
@@ -245,11 +247,12 @@ function increment() {
 }
 
 .control-btn:hover:not(:disabled) {
-  background-color: #4f4f4f;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #ffd700;
 }
 
 .control-btn:active:not(:disabled) {
-  background-color: #5a5a5a;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .control-btn:disabled {

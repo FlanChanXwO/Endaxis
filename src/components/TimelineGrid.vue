@@ -1458,7 +1458,7 @@ onUnmounted(() => {
       <div class="selector-header">
         <div class="header-left-group">
           <el-input v-model="searchQuery" placeholder="搜索干员名称..." :prefix-icon="Search" clearable style="width: 180px" />
-          <button class="remove-btn" @click="removeOperator" title="清空当前轨道">
+          <button class="ea-btn ea-btn--glass-cut ea-btn--glass-cut-danger ea-btn--cut-left ea-btn--lift" @click="removeOperator" title="清空当前轨道">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
               <path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -1466,7 +1466,7 @@ onUnmounted(() => {
           </button>
         </div>
         <div class="element-filters">
-          <button v-for="elm in ELEMENT_FILTERS" :key="elm.value" class="filter-btn" :class="{ active: filterElement === elm.value }" :style="{ '--btn-color': elm.color }" @click="filterElement = elm.value">
+          <button v-for="elm in ELEMENT_FILTERS" :key="elm.value" class="ea-btn ea-btn--glass-cut" :class="{ 'is-active': filterElement === elm.value }" :style="{ '--ea-btn-accent': elm.color }" @click="filterElement = elm.value">
             {{ elm.label }}
           </button>
         </div>
@@ -2245,67 +2245,10 @@ body.capture-mode .davinci-range {
   gap: 12px;
 }
 
-/* 卸下按钮 */
-.remove-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 16px;
-  height: 32px;
-  background: rgba(255, 77, 79, 0.05);
-  border: 1px solid rgba(255, 77, 79, 0.4);
-  color: #ff7875;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
-}
-
-.remove-btn:hover {
-  background: rgba(255, 77, 79, 0.2);
-  border-color: #ff7875;
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.remove-btn:active {
-  transform: translateY(0);
-}
-
 .element-filters {
   display: flex;
   gap: 6px;
 }
-
-/* 筛选按钮 */
-.filter-btn {
-  --btn-color: #888;
-  padding: 4px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #aaa;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: bold;
-  transition: all 0.2s;
-  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0% 100%);
-}
-
-.filter-btn:hover {
-  border-color: var(--btn-color);
-  color: var(--btn-color);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.filter-btn.active {
-  background: var(--btn-color);
-  border-color: var(--btn-color);
-  color: #000;
-  font-weight: 900;
-  box-shadow: 0 0 12px var(--btn-color);
-}
-
 .roster-scroll-container {
   max-height: 400px;
   overflow-y: auto;

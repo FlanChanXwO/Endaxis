@@ -465,17 +465,17 @@ onUnmounted(() => {
 
           <div class="ts-header-group">
 
-            <button class="ts-icon-btn" @click="startRenameCurrent" title="重命名当前方案">
+            <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--ghost ea-btn--no-shrink" @click="startRenameCurrent" title="重命名当前方案">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
             </button>
 
-            <button class="ts-icon-btn" @click="handleDuplicateCurrent" title="复制当前方案">
+            <button class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--ghost ea-btn--no-shrink" @click="handleDuplicateCurrent" title="复制当前方案">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
 
             <button
                 v-if="store.scenarioList.length > 1"
-                class="ts-icon-btn danger"
+                class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--ghost ea-btn--hover-danger ea-btn--no-shrink"
                 @click="handleDeleteCurrent"
                 title="删除当前方案"
             >
@@ -518,7 +518,7 @@ onUnmounted(() => {
 
             <button
                 v-if="store.scenarioList.length < store.MAX_SCENARIOS"
-                class="ts-add-btn"
+                class="ea-btn ea-btn--icon ea-btn--icon-24 ea-btn--icon-plus ea-btn--no-shrink ts-add-btn"
                 @click="handleAddScenario"
                 title="新建方案"
             >+</button>
@@ -529,7 +529,7 @@ onUnmounted(() => {
         <div class="header-controls">
           <input type="file" ref="fileInputRef" style="display: none" accept=".json,.png" @change="onFileSelected" />
 
-          <button class="control-btn info-btn" @click="aboutDialogVisible = true" title="查看教程与项目信息">
+          <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-info" @click="aboutDialogVisible = true" title="查看教程与项目信息">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
@@ -538,7 +538,7 @@ onUnmounted(() => {
 
           <div class="divider-vertical"></div>
 
-          <button class="control-btn danger-btn" @click="handleReset" title="清空所有内容">
+          <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-danger-dark" @click="handleReset" title="清空所有内容">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -547,7 +547,7 @@ onUnmounted(() => {
 
           <div class="divider-vertical"></div>
 
-          <button class="control-btn export-img-btn" @click="openExportDialog" title="导出为PNG长图">
+          <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-orange" @click="openExportDialog" title="导出为PNG长图">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
             </svg>
@@ -555,7 +555,7 @@ onUnmounted(() => {
           </button>
 
           <div class="project-btn-group">
-            <button class="control-btn group-item load-btn" @click="triggerImport" title="导入 .json 项目文件或 .png 图片">
+            <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-blue group-item" @click="triggerImport" title="导入 .json 项目文件或 .png 图片">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -564,14 +564,14 @@ onUnmounted(() => {
               加载
             </button>
 
-            <button class="control-btn group-item save-btn" @click="store.exportProject" title="保存为 .json 文件">
+            <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-success group-item" @click="store.exportProject" title="保存为 .json 文件">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>
               </svg>
               保存
             </button>
 
-            <button class="control-btn group-item share-btn" @click="copyShareCode" title="复制当前方案的分享码">
+            <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-purple group-item" @click="copyShareCode" title="复制当前方案的分享码">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
                 <polyline points="16 6 12 2 8 6"></polyline>
@@ -580,7 +580,7 @@ onUnmounted(() => {
               分享
             </button>
 
-            <button class="control-btn group-item load-btn" @click="openImportShareDialog" title="粘贴分享码导入方案">
+            <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-blue group-item" @click="openImportShareDialog" title="粘贴分享码导入方案">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 11 12 14 22 4"></polyline>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
@@ -609,7 +609,12 @@ onUnmounted(() => {
         <div class="form-item"><label>文件名称</label><el-input v-model="exportForm.filename" placeholder="请输入文件名" size="large"/></div>
         <div class="form-item"><label>导出时长 (秒)</label><el-input-number v-model="exportForm.duration" :min="10" :max="store.TOTAL_DURATION" :step="10" size="large" style="width: 100%;"/><div class="hint">最大支持 {{ store.TOTAL_DURATION }}s</div></div>
       </div>
-      <template #footer><span class="dialog-footer"><el-button @click="exportDialogVisible = false">取消</el-button><el-button type="primary" @click="processExport">开始导出</el-button></span></template>
+      <template #footer>
+        <span class="dialog-footer">
+          <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--outline-muted" @click="exportDialogVisible = false">取消</button>
+          <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--fill-gold" @click="processExport">开始导出</button>
+        </span>
+      </template>
     </el-dialog>
 
     <el-dialog
@@ -641,8 +646,8 @@ onUnmounted(() => {
       </div>
       <template #footer>
       <span class="dialog-footer">
-        <el-button @click="importShareDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleImportShare">确认覆盖并导入</el-button>
+        <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--outline-muted" @click="importShareDialogVisible = false">取消</button>
+        <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--fill-gold" @click="handleImportShare">确认覆盖并导入</button>
       </span>
       </template>
     </el-dialog>
@@ -704,17 +709,17 @@ onUnmounted(() => {
         <div class="section-container tech-style border-gold">
           <div class="panel-tag-mini gold">友情链接</div>
           <div class="friend-links">
-            <a href="https://www.zmdmap.com/" target="_blank" class="friend-tag">终末地互动地图</a>
-            <a href="https://ef.yituliu.cn/" target="_blank" class="friend-tag">终末地一图流</a>
+            <a href="https://www.zmdmap.com/" target="_blank" class="ea-btn ea-btn--glass-cut ea-btn--glass-cut-gold ea-btn--glass-cut-fill-hover">终末地互动地图</a>
+            <a href="https://ef.yituliu.cn/" target="_blank" class="ea-btn ea-btn--glass-cut ea-btn--glass-cut-gold ea-btn--glass-cut-fill-hover">终末地一图流</a>
           </div>
         </div>
       </div>
 
       <template #footer>
         <div class="about-footer">
-          <el-button type="primary" class="tech-confirm-btn" @click="aboutDialogVisible = false">
+          <button type="button" class="ea-btn ea-btn--md ea-btn--lift ea-btn--fill-gold tech-confirm-btn" @click="aboutDialogVisible = false">
             开始使用
-          </el-button>
+          </button>
         </div>
       </template>
     </el-dialog>
@@ -754,9 +759,6 @@ onUnmounted(() => {
 .ts-tabs-group { display: flex; align-items: center; gap: 6px; background: transparent; padding: 0; border-radius: 0; flex-grow: 1; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; }
 .ts-tabs-group::-webkit-scrollbar { display: none; }
 
-.ts-icon-btn { width: 24px; height: 24px; background: transparent; border: 1px solid transparent; border-radius: 4px; color: #888; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
-.ts-icon-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #555; }
-.ts-icon-btn.danger:hover { background: rgba(255, 77, 79, 0.1); color: #ff4d4f; border-color: #ff4d4f; }
 
 .ts-title-wrapper { display: flex; align-items: baseline; color: #f0f0f0; font-size: 16px; font-weight: bold; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.5px; margin-left: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ts-deco-bracket { color: #666; font-weight: 300; margin: 0 2px; user-select: none; flex-shrink: 0; }
@@ -770,25 +772,11 @@ onUnmounted(() => {
 .ts-tab-item:hover { background-color: rgba(255, 255, 255, 0.15); color: #fff; }
 .ts-tab-item.is-active { background-color: #e0e0e0; color: #222; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
-.ts-add-btn { width: 24px; height: 24px; background: transparent; border: 1px dashed #555; color: #666; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 4px; font-size: 14px; transition: all 0.2s; flex-shrink: 0; }
-.ts-add-btn:hover { border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.05); }
-.ts-add-btn.is-disabled { opacity: 0.3; cursor: not-allowed; border-color: #444; color: #444; }
-.ts-add-btn.is-disabled:hover { background: transparent; border-color: #444; color: #444; }
+.ts-add-btn { margin-left: 4px; font-size: 14px; }
 
-/* Buttons */
-.control-btn { padding: 6px 14px; border: 1px solid #555; background-color: #444; color: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; font-weight: 500; }
-.control-btn svg { flex-shrink: 0; display: block; }
-.control-btn:hover { background-color: #555; border-color: #777; transform: translateY(-1px); }
-.control-btn:active { transform: translateY(1px); }
-.save-btn:hover { border-color: #4CAF50; color: #4CAF50; background-color: rgba(76, 175, 80, 0.1); }
-.load-btn:hover { border-color: #4a90e2; color: #4a90e2; background-color: rgba(74, 144, 226, 0.1); }
-.export-img-btn:hover { border-color: #e6a23c; color: #e6a23c; background-color: rgba(230, 162, 60, 0.1); }
-.danger-btn:hover { border-color: #a61d24; color: #a61d24; background-color: rgba(255, 77, 79, 0.1); }
-.info-btn:hover { border-color: #00e5ff; color: #00e5ff; background-color: rgba(0, 229, 255, 0.1); }
-.share-btn:hover { border-color: #722ed1; color: #722ed1; background-color: rgba(114, 46, 209, 0.1); }
 /* 按钮组容器 */
 .project-btn-group { display: flex; align-items: center; }
-.project-btn-group .group-item { position: relative; border-radius: 0; margin-right: -1px; border: 1px solid #555; }
+.project-btn-group .group-item { position: relative; border-radius: 0; margin-right: -1px; }
 .project-btn-group .group-item:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
 .project-btn-group .group-item:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; margin-right: 0; }
 .project-btn-group .group-item:hover { z-index: 2; border-color: currentColor; }
@@ -941,24 +929,6 @@ onUnmounted(() => {
   margin-top: 10px;
 }
 
-.friend-tag {
-  padding: 4px 14px;
-  background: rgba(255, 215, 0, 0.04);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  color: #ffd700;
-  font-size: 11px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: all 0.2s;
-  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
-}
-
-.friend-tag:hover {
-  background: #ffd700;
-  color: #000;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
-}
-
 /* 底部装饰 */
 .about-footer {
   display: flex;
@@ -1040,13 +1010,9 @@ onUnmounted(() => {
 :deep(.el-dialog__body) { color: #ccc; padding: 25px 25px 10px 25px; }
 :deep(.el-dialog__footer) { padding: 15px 25px 20px; border-top: 1px solid #3a3a3a; }
 :deep(.el-input__wrapper) { background-color: #1f1f1f; box-shadow: 0 0 0 1px #444 inset; padding: 4px 11px; }
-:deep(.el-input__inner) { color: white; height: 36px; line-height: 36px; }
-:deep(.el-input__wrapper:hover) { box-shadow: 0 0 0 1px #666 inset; }
-:deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px #ffd700 inset; }
-:deep(.el-button) { background: #3a3a3a; border-color: #555; color: #ccc; height: 36px; display: inline-flex; justify-content: center; align-items: center; border-bottom: none !important; outline: none !important; }
-:deep(.el-button:hover) { background: #444; color: white; border-color: #777; }
-:deep(.el-button--primary) { background: #ffd700; border-color: #ffd700; color: #000; font-weight: bold; }
-:deep(.el-button--primary:hover) { background: #ffec3d; border-color: #ffec3d; color: #000; }
+  :deep(.el-input__inner) { color: white; height: 36px; line-height: 36px; }
+  :deep(.el-input__wrapper:hover) { box-shadow: 0 0 0 1px #666 inset; }
+  :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 1px #ffd700 inset; }
 
 .drop-overlay {
   position: fixed;
