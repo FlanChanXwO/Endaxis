@@ -463,11 +463,7 @@ export const useTimelineStore = defineStore('timeline', () => {
         if (node.type === 'action') {
             elementId = `action-${node.id}`
         } else if (node.type === 'effect') {
-            if (isTransfer) {
-                elementId = `transfer-${node.actionId}-${node.flatIndex}`
-            } else {
-                elementId = `anomaly-${node.actionId}-${node.flatIndex}`
-            }
+            elementId = isTransfer ? `${node.id}_transfer` : node.id
         }
 
         if (!elementId) {

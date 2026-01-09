@@ -125,7 +125,7 @@ export function useDragConnection() {
             toActionId = toNode.actionId
         }
 
-        if (fromActionId === toActionId) {
+        if (fromId === toId) {
             return false
         }
 

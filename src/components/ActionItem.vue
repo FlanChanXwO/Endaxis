@@ -367,8 +367,8 @@ function handleConnectionDrop(port) {
 }
 
 function handleConnectionSnap(port, snapPos) {
-  if (connectionSourceActionId.value !== props.action.instanceId) {
-    connectionHandler.snapTo(props.action.instanceId, port, snapPos)
+  if (connectionHandler.isNodeValid(props.action.instanceId)) {
+    connectionHandler.snapTo(props.action.instanceId, port, snapPos);
   }
 }
 
@@ -387,15 +387,13 @@ function handleEffectDragStart(event, effectId) {
 }
 
 function handleEffectSnap(event, effectId) {
-  if (connectionSourceActionId.value !== props.action.instanceId) {
-    if (!connectionHandler.isNodeValid(effectId)) {
-      return
-    }
-    const rect = event.target.getBoundingClientRect()
-    const viewportPoint = getRectPos(rect, 'left')
-    const timelinePoint = store.toTimelineSpace(viewportPoint.x, viewportPoint.y)
-    connectionHandler.snapTo(effectId, 'left', timelinePoint)
+  if (!connectionHandler.isNodeValid(effectId)) {
+    return;
   }
+  const rect = event.target.getBoundingClientRect()
+  const viewportPoint = getRectPos(rect, 'left')
+  const timelinePoint = store.toTimelineSpace(viewportPoint.x, viewportPoint.y)
+  connectionHandler.snapTo(effectId, 'left', timelinePoint)
 }
 
 function handleEffectDrop(effectId) {
