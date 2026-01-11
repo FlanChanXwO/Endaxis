@@ -1,5 +1,6 @@
 <script setup>
 import { ref, provide, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
+import { refThrottled } from '@vueuse/core'
 import { useTimelineStore } from '../stores/timelineStore.js'
 import ActionItem from './ActionItem.vue'
 import ActionConnector from './ActionConnector.vue'
@@ -452,9 +453,9 @@ function getViewWindow({ bufferPx = 0 } = {}) {
   }
 }
 
-const dynamicTicks = computed(() => {
+const rawDynamicTicks = computed(() => {
   const width = TIME_BLOCK_WIDTH.value;
-  const viewWindow = getViewWindow({ bufferPx: 0 });
+  const viewWindow = getViewWindow({ bufferPx: 100 });
 
   const realStart = viewWindow.startTime;
   const realEnd = viewWindow.endTime;
@@ -534,6 +535,8 @@ const dynamicTicks = computed(() => {
 
   return { realTicks, gameTicks };
 });
+
+const dynamicTicks = refThrottled(rawDynamicTicks, 100);
 
 function forceSvgUpdate() { svgRenderKey.value++ }
 
