@@ -620,7 +620,7 @@ function adjustZoom(delta, anchorTime = null) {
   const newScrollLeft = (anchorTime * newWidth) - anchorOffsetInViewport
 
   nextTick(() => {
-    store.setTimelineShift(Math.max(0, newScrollLeft))
+    store.setTimelineShift(newScrollLeft)
   })
 }
 function handleWheel(e) {
@@ -655,7 +655,7 @@ function handleTrackWheel(e) {
     if (e.shiftKey && delta === 0) delta = e.deltaY
 
     const newLeft = store.timelineShift + delta
-    store.setTimelineShift(Math.min(Math.max(0, newLeft), totalWidthComputed.value - store.timelineRect.width ))
+    store.setTimelineShift(newLeft)
   }
 }
 
@@ -878,7 +878,8 @@ function performAutoScroll() {
     autoScrollRaf = null
     return
   }
-  store.timelineShift += autoScrollSpeed.value
+  const newShift = store.timelineShift + autoScrollSpeed.value
+  store.setTimelineShift(newShift)
   updateDragPosition(lastMouseX)
   autoScrollRaf = requestAnimationFrame(performAutoScroll)
 }
@@ -1137,7 +1138,6 @@ const activeFreezeRegions = computed(() => {
 
 watch(() => store.timeBlockWidth, () => { nextTick(() => { forceSvgUpdate(); updateScrollbarHeight() }) })
 watch(() => [store.tracks, store.connections], () => { nextTick(() => { forceSvgUpdate() }) }, { deep: true })
-watchEffect(() => { store.updateActionRects() })
 
 onMounted(() => {
   if (tracksContentRef.value) {
@@ -1149,7 +1149,7 @@ onMounted(() => {
       updateTrackRects()
 
       store.setTimelineRect(rect.width, rect.height, rect.top, rect.right, rect.bottom, rect.left)
-      store.updateActionRects(); forceSvgUpdate(); updateScrollbarHeight(); 
+      forceSvgUpdate(); updateScrollbarHeight();
     })
 
     tracksResizeObserver.observe(tracksContentRef.value)
