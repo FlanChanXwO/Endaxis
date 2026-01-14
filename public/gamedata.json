@@ -4159,6 +4159,38 @@
       "slot": "gloves",
       "level": 70,
       "icon": "/equipment/item_equip_t4_suit_phy01_hand_02.webp"
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_hand_01",
+      "name": "长息护手",
+      "category": "长息",
+      "slot": "gloves",
+      "level": 70,
+      "icon": "/equipment/item_equip_t4_suit_usp02_hand_01.webp"
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_body_01",
+      "name": "长息装甲",
+      "category": "长息",
+      "slot": "armor",
+      "level": 70,
+      "icon": "/equipment/item_equip_t4_suit_usp02_body_01.webp"
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_edc_01",
+      "name": "长息蓄电核",
+      "category": "长息",
+      "slot": "accessory",
+      "level": 70,
+      "icon": "/equipment/item_equip_t4_suit_usp02_edc_01.webp"
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_edc_03",
+      "name": "长息辅助臂",
+      "category": "长息",
+      "slot": "accessory",
+      "level": 70,
+      "icon": "/equipment/item_equip_t4_suit_usp02_edc_03.webp"
     }
   ],
   "equipmentCategories": [
@@ -4172,7 +4204,17 @@
     "蚀电防护",
     "阿伯莉遗声",
     "天灾防护",
-    "点剑"
+    "点剑",
+    "生物辅助",
+    "轻超域",
+    "碾骨",
+    "脉冲式",
+    "拓荒",
+    "动火用",
+    "M.I.警用",
+    "50式应龙",
+    "潮涌",
+    "长息"
   ],
   "equipmentCategoryConfigs": {
     "武陵": {
@@ -4228,6 +4270,56 @@
     "点剑": {
       "setBonus": {
         "duration": 0
+      }
+    },
+    "生物辅助": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "轻超域": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "碾骨": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "脉冲式": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "拓荒": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "动火用": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "M.I.警用": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "50式应龙": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "潮涌": {
+      "setBonus": {
+        "duration": 0
+      }
+    },
+    "长息": {
+      "setBonus": {
+        "duration": 15
       }
     }
   }

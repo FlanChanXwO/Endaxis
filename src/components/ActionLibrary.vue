@@ -22,7 +22,6 @@ const activeCharacterName = computed(() => activeCharacter.value ? activeCharact
 const activeWeaponName = computed(() => activeWeapon.value ? activeWeapon.value.name : '未装备武器')
 const activeLibraryTab = ref('character')
 const hasWeaponLibrary = computed(() => store.activeWeaponSkillLibrary.length > 0)
-const hasSetLibrary = computed(() => store.activeSetBonusLibrary.length > 0)
 const currentLibrary = computed(() => {
   if (activeLibraryTab.value === 'weapon') return store.activeWeaponSkillLibrary
   if (activeLibraryTab.value === 'set') return store.activeSetBonusLibrary

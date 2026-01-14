@@ -582,15 +582,6 @@ onUnmounted(() => {
               加载
             </button>
 
-            <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-purple group-item" @click="copyShareCode" title="复制当前项目的数据码">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                <polyline points="16 6 12 2 8 6"></polyline>
-                <line x1="12" y1="2" x2="12" y2="15"></line>
-              </svg>
-              分享
-            </button>
-
             <button class="ea-btn ea-btn--sm ea-btn--lift ea-btn--hover-blue group-item" @click="openImportShareDialog" title="粘贴数据码导入项目">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 11 12 14 22 4"></polyline>
@@ -615,7 +606,7 @@ onUnmounted(() => {
 
     <aside class="properties-sidebar"><PropertiesPanel/></aside>
 
-    <el-dialog v-model="exportDialogVisible" title="导出设置" width="420px" align-center class="custom-dialog">
+    <el-dialog v-model="exportDialogVisible" title="导出设置" width="460px" align-center class="custom-dialog">
       <div class="export-form">
         <div class="form-item"><label>文件名称</label><el-input v-model="exportForm.filename" placeholder="请输入文件名" size="large"/></div>
         <div class="form-item"><label>导出时长 (秒)</label><el-input-number v-model="exportForm.duration" :min="10" :max="store.TOTAL_DURATION" :step="10" size="large" style="width: 100%;"/><div class="hint">最大支持 {{ store.TOTAL_DURATION }}s</div></div>
@@ -624,6 +615,7 @@ onUnmounted(() => {
         <span class="dialog-footer">
           <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--outline-muted" @click="exportDialogVisible = false">取消</button>
           <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--fill-success" @click="handleExportJson">导出 JSON</button>
+          <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--fill-success" @click="copyShareCode">复制数据码</button>
           <button type="button" class="ea-btn ea-btn--sm ea-btn--lift ea-btn--fill-gold" @click="processExport">导出图片</button>
         </span>
       </template>

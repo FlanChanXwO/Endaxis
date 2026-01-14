@@ -1188,7 +1188,7 @@ function saveData() {
                   <el-option v-for="wpn in WEAPON_TYPES" :key="wpn.value" :label="wpn.label" :value="wpn.value" />
                 </el-select>
               </div>
-              <div class="form-group full-width"><label>头像路径 (Public Dir)</label><input v-model="selectedChar.avatar" type="text" /></div>
+              <div class="form-group full-width"><label>图标路径</label><input v-model="selectedChar.avatar" type="text" /></div>
             </div>
 
             <h3 class="section-title">特殊机制</h3>
@@ -1528,7 +1528,7 @@ function saveData() {
                 <el-option v-for="cat in enemyCategories" :key="cat" :label="cat" :value="cat" />
               </el-select>
             </div>
-            <div class="form-group full-width"><label>头像路径</label><input v-model="selectedEnemy.avatar" /></div>
+            <div class="form-group full-width"><label>图标路径</label><input v-model="selectedEnemy.avatar" /></div>
           </div>
 
           <h3 class="section-title">数值属性</h3>
