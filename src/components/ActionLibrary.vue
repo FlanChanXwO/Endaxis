@@ -263,10 +263,7 @@ function isAttackSegmentDisabled(seg) {
 }
 
 function getVisibleAttackSegments(skill) {
-  const list = Array.isArray(skill?.attackSegmentsAll)
-      ? skill.attackSegmentsAll
-      : (Array.isArray(skill?.attackSegments) ? skill.attackSegments : [])
-  return list.filter(seg => (Number(seg?.duration) || 0) > 0)
+  return Array.isArray(skill?.attackSegments) ? skill.attackSegments : []
 }
 
 function onAttackSegmentDragStart(evt, seg) {
@@ -565,15 +562,15 @@ function onNativeDragEnd() {
 
           <div v-if="skill.kind === 'attack_group'" class="attack-segment-row" @click.stop>
             <div
-                v-for="seg in getVisibleAttackSegments(skill)"
+                v-for="(seg, idx) in getVisibleAttackSegments(skill)"
                 :key="seg.id"
                 class="attack-segment-chip"
-                :class="{ 'is-selected': store.selectedLibrarySkillId === seg.id && store.selectedLibrarySource === activeLibraryTab }"
+                :class="{ 'is-selected': store.selectedLibrarySkillId === seg.id && store.selectedLibrarySource === activeLibraryTab, 'is-last': idx === getVisibleAttackSegments(skill).length - 1 }"
                 :draggable="!isAttackSegmentDisabled(seg)"
                 @dragstart="onAttackSegmentDragStart($event, seg)"
                 @dragend="onNativeDragEnd"
                 @click.stop="onAttackSegmentClick(seg)"
-            >{{ seg.attackSegmentIndex || '' }}</div>
+            >{{ (seg.attackSegmentIndex || '') + 'A' }}</div>
           </div>
         </div>
       </div>
@@ -702,6 +699,7 @@ function onNativeDragEnd() {
   border-radius: 2px;
   cursor: grab;
   overflow: hidden;
+  box-sizing: border-box;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .skill-card:hover {
@@ -717,29 +715,59 @@ function onNativeDragEnd() {
 
 .attack-segment-row {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   width: 100%;
   padding: 0;
-  min-height: 18px;
+  min-height: 22px;
   align-items: center;
+  box-sizing: border-box;
 }
 
 .attack-segment-chip {
+  position: relative;
   flex: 1 1 0;
-  min-width: 22px;
-  height: 18px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-left: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.75);
   font-family: 'Roboto Mono', 'Consolas', monospace;
   font-size: 11px;
   line-height: 1;
   user-select: none;
   cursor: grab;
+  box-sizing: border-box;
   transition: all 0.15s ease;
+  border-radius: 2px;
+  min-width: 0;
+}
+
+.attack-segment-chip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 2px 0 10px rgba(255, 255, 255, 0.25);
+  opacity: 0.75;
+}
+
+.attack-segment-chip:not(.is-last)::after {
+  content: '>';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.28);
+  font-family: 'Roboto Mono', 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .attack-segment-chip:hover {
@@ -753,6 +781,7 @@ function onNativeDragEnd() {
   color: #ffd700;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.12);
 }
+
 
 .skill-type-empty {
   height: 9px;
