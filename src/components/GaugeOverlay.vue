@@ -41,7 +41,7 @@ const gaugePoints = computed(() => {
 const pathData = computed(() => {
   if (gaugePoints.value.length === 0) return ''
   return gaugePoints.value.map(p => {
-    const x = p.time * store.timeBlockWidth
+    const x = store.timeToPx(p.time)
     const ratio = Math.min(p.ratio, 1.0) // 限制最大值为 1.0
     const y = BASE_Y - (ratio * CHART_HEIGHT)
     return `${x},${y}`
@@ -52,7 +52,7 @@ const areaData = computed(() => {
   if (gaugePoints.value.length === 0) return ''
   const pointsStr = pathData.value
   const lastPoint = gaugePoints.value[gaugePoints.value.length - 1]
-  const lastX = lastPoint ? lastPoint.time * store.timeBlockWidth : 0
+  const lastX = lastPoint ? store.timeToPx(lastPoint.time) : 0
 
   // 闭合路径逻辑
   return `0,${BASE_Y} ${pointsStr} ${lastX},${BASE_Y}`
@@ -66,8 +66,8 @@ const fullSegments = computed(() => {
   for (let i = 0; i < points.length - 1; i++) {
     // 判定连续两点均为满能量状态
     if (points[i].ratio >= 1 && points[i + 1].ratio >= 1) {
-      const x1 = points[i].time * currentBlockWidth
-      const x2 = points[i + 1].time * currentBlockWidth
+      const x1 = store.timeToPx(points[i].time)
+      const x2 = store.timeToPx(points[i + 1].time)
       if (x2 > x1) segments.push({x1, x2})
     }
   }
@@ -77,7 +77,7 @@ const fullSegments = computed(() => {
 
 <template>
   <div class="gauge-overlay">
-    <svg class="gauge-svg" :height="ROW_HEIGHT" :width="store.TOTAL_DURATION * store.timeBlockWidth">
+    <svg class="gauge-svg" :height="ROW_HEIGHT" :width="store.totalTimelineWidthPx">
 
       <defs>
         <linearGradient :id="gradientId" x1="0" y1="0" x2="0" y2="1">
