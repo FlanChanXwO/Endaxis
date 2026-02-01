@@ -325,6 +325,8 @@ function onNativeDragStart(evt, skill) {
 
   const duration = Number(skill.duration) || 0;
   const themeColor = getSkillThemeColor(skill);
+  let dragOffsetX = 0
+  let dragOffsetY = 0
 
   if (isIconDrag) {
     const safeColor = themeColor || '#ccc'
@@ -360,7 +362,9 @@ function onNativeDragStart(evt, skill) {
       pointerEvents: 'none'
     });
     document.body.appendChild(ghost);
-    evt.dataTransfer.setDragImage(ghost, size / 2, size / 2);
+    dragOffsetX = size / 2
+    dragOffsetY = size / 2
+    evt.dataTransfer.setDragImage(ghost, dragOffsetX, dragOffsetY);
   } else {
     const realWidth = (duration || 1) * store.timeBlockWidth;
     ghost.textContent = skill.name || '';
@@ -379,7 +383,9 @@ function onNativeDragStart(evt, skill) {
       backdropFilter: 'blur(4px)'
     });
     document.body.appendChild(ghost);
-    evt.dataTransfer.setDragImage(ghost, 10, 25);
+    dragOffsetX = 10
+    dragOffsetY = 25
+    evt.dataTransfer.setDragImage(ghost, dragOffsetX, dragOffsetY);
   }
   evt.dataTransfer.effectAllowed = 'copy';
 
@@ -387,7 +393,9 @@ function onNativeDragStart(evt, skill) {
   const payload = {
     ...skill,
     librarySource: libSource,
-    weaponId: libSource === 'weapon' ? (skill.weaponId || activeWeapon.value?.id || null) : null
+    weaponId: libSource === 'weapon' ? (skill.weaponId || activeWeapon.value?.id || null) : null,
+    dragOffsetX,
+    dragOffsetY,
   }
 
   store.setDraggingSkill(payload);

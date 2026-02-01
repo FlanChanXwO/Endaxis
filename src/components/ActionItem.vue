@@ -28,6 +28,19 @@ const displayLabel = computed(() => {
 
   const suffix = isVariant.value ? '*' : ''
 
+  if (props.action.kind === 'attack_segment') {
+    const total = Number(props.action.attackSequenceTotal) || 0
+    const idx = Number(props.action.attackSequenceIndex) || Number(props.action.attackSegmentIndex) || 0
+
+    if (idx > 0) {
+      if (total > 0 && idx === total) {
+        const groupName = props.action.attackGroupName || (name ? name.replace(/\s*\d+\s*$/, '') : '重击')
+        return `${groupName}${suffix}`
+      }
+      return `A${idx}${suffix}`
+    }
+  }
+
   if (width >= 30) return `${name}${suffix}`
   return `${TYPE_SHORTHAND[type] || '?'}${suffix}`
 })

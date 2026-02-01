@@ -1467,20 +1467,34 @@ function onWindowMouseUp(event) {
 }
 
 function captureClick(e) { e.stopPropagation(); e.preventDefault() }
+
+function calculateTimeFromDropEvent(evt, skill, fixedStep = null) {
+  const offsetX = Number(skill?.dragOffsetX) || 0
+  const mouseXInTrack = store.toTimelineSpace((evt?.clientX || 0) - offsetX, evt?.clientY || 0).x
+
+  const rawTime = store.pxToTime(mouseXInTrack)
+
+  const step = fixedStep !== null ? fixedStep : store.snapStep
+  const inverse = 1 / step
+  let startTime = Math.round(rawTime * inverse) / inverse
+  if (startTime < 0) startTime = 0
+  return startTime
+}
+
 function onTrackDrop(track, evt) {
   const skill = store.draggingSkillData; if (!skill || store.activeTrackId !== track.id) return
   if (skill.librarySource === 'set' || skill.type === 'set') {
-    const startTime = calculateTimeFromEvent(evt)
+    const startTime = calculateTimeFromDropEvent(evt, skill)
     store.addSetBonusStatus(track.id, skill.setCategory || skill.name, startTime)
     return
   }
   if (skill.librarySource === 'weapon' || skill.type === 'weapon') {
     if (!track.weaponId || (skill.weaponId && skill.weaponId !== track.weaponId)) return
-    const startTime = calculateTimeFromEvent(evt)
+    const startTime = calculateTimeFromDropEvent(evt, skill)
     store.addWeaponStatus(track.id, skill, startTime)
     return
   }
-  const startTime = calculateTimeFromEvent(evt)
+  const startTime = calculateTimeFromDropEvent(evt, skill)
   store.addSkillToTrack(track.id, skill, startTime)
   nextTick(() => forceSvgUpdate())
 }

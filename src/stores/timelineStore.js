@@ -1425,6 +1425,7 @@ export const useTimelineStore = defineStore('timeline', () => {
             const { duration: _ignoredDuration, ...groupOverride } = (groupOverrideRaw && typeof groupOverrideRaw === 'object') ? groupOverrideRaw : {}
 
             const derivedElement = activeChar.attack_element || activeChar.element || 'physical'
+            const attackGroupName = '重击'
 
             const segmentSkills = (activeChar.attack_segments || []).slice(0, ATTACK_SEGMENT_COUNT).map((seg, idx) => {
                 const segId = `${groupId}_seg${idx + 1}`
@@ -1439,7 +1440,7 @@ export const useTimelineStore = defineStore('timeline', () => {
                 const merged = {
                     id: segId,
                     type: 'attack',
-                    name: `重击 ${idx + 1}`,
+                    name: `${attackGroupName} ${idx + 1}`,
                     librarySource: 'character',
                     element: seg?.element || derivedElement,
                     icon: seg?.icon || '',
@@ -1464,13 +1465,18 @@ export const useTimelineStore = defineStore('timeline', () => {
                 }
             })
 
-            const enabledSegments = segmentSkills.filter(s => (Number(s.duration) || 0) > 0)
+            const enabledSegments = segmentSkills.filter(s => (Number(s.duration) || 0) > 0).map((seg, idx, list) => ({
+                ...seg,
+                attackSequenceIndex: idx + 1,
+                attackSequenceTotal: list.length,
+                attackGroupName
+            }))
             const totalDuration = enabledSegments.reduce((acc, s) => acc + (Number(s.duration) || 0), 0)
 
             const groupSkill = {
                 id: groupId,
                 type: 'attack',
-                name: '重击',
+                name: attackGroupName,
                 librarySource: 'character',
                 element: derivedElement,
                 duration: totalDuration,
@@ -1488,6 +1494,7 @@ export const useTimelineStore = defineStore('timeline', () => {
             const { duration: _ignoredDuration, ...groupOverride } = (groupOverrideRaw && typeof groupOverrideRaw === 'object') ? groupOverrideRaw : {}
 
             const derivedElement = variant.element || activeChar.attack_element || activeChar.element || 'physical'
+            const attackGroupName = variant.name || '强化重击'
 
             const segmentSkills = (variant.attackSegments || []).slice(0, ATTACK_SEGMENT_COUNT).map((seg, idx) => {
                 const segId = `${groupId}_seg${idx + 1}`
@@ -1502,7 +1509,7 @@ export const useTimelineStore = defineStore('timeline', () => {
                 const merged = {
                     id: segId,
                     type: 'attack',
-                    name: `${variant.name || '强化重击'} ${idx + 1}`,
+                    name: `${attackGroupName} ${idx + 1}`,
                     librarySource: 'character',
                     element: seg?.element || derivedElement,
                     icon: seg?.icon || '',
@@ -1527,13 +1534,18 @@ export const useTimelineStore = defineStore('timeline', () => {
                 }
             })
 
-            const enabledSegments = segmentSkills.filter(s => (Number(s.duration) || 0) > 0)
+            const enabledSegments = segmentSkills.filter(s => (Number(s.duration) || 0) > 0).map((seg, idx, list) => ({
+                ...seg,
+                attackSequenceIndex: idx + 1,
+                attackSequenceTotal: list.length,
+                attackGroupName
+            }))
             const totalDuration = enabledSegments.reduce((acc, s) => acc + (Number(s.duration) || 0), 0)
 
             const groupSkill = {
                 id: groupId,
                 type: 'attack',
-                name: variant.name || '强化重击',
+                name: attackGroupName,
                 librarySource: 'character',
                 element: derivedElement,
                 duration: totalDuration,
@@ -1912,14 +1924,45 @@ export const useTimelineStore = defineStore('timeline', () => {
 
         if (skill?.kind === 'attack_group' && Array.isArray(skill.attackSegments)) {
             const segments = skill.attackSegments.filter(s => (Number(s?.duration) || 0) > 0)
+            if (segments.length === 0) {
+                return
+            }
+
+            const attackGroupInstanceId = `atkgrp_${uid()}`
+            const attackSequenceTotal = segments.length
+            const attackGroupName = skill.name || '重击'
             let cursor = startTime
 
-            for (const seg of segments) {
+            for (let i = 0; i < segments.length; i++) {
+                const seg = segments[i]
                 const newAction = createActionFromSkill(seg, cursor)
+                newAction.attackGroupInstanceId = attackGroupInstanceId
+                newAction.attackSequenceIndex = i + 1
+                newAction.attackSequenceTotal = attackSequenceTotal
+                newAction.attackGroupName = attackGroupName
                 track.actions.push(newAction)
                 cursor += Number(seg.duration) || 0
             }
 
+            track.actions.sort((a, b) => a.startTime - b.startTime)
+            commitState()
+            return
+        }
+
+        if (skill?.kind === 'attack_segment') {
+            const idx = Number(skill.attackSequenceIndex) || Number(skill.attackSegmentIndex) || 0
+            const total = Number(skill.attackSequenceTotal) || 0
+            const newAction = createActionFromSkill(skill, startTime)
+            if (idx > 0) {
+                newAction.attackSequenceIndex = idx
+                if (total > 0) {
+                    newAction.attackSequenceTotal = total
+                }
+                newAction.attackGroupName = (typeof skill.attackGroupName === 'string' && skill.attackGroupName.trim())
+                    ? skill.attackGroupName.trim()
+                    : ((typeof skill.name === 'string' && skill.name.trim()) ? skill.name.trim().replace(/\s*\d+\s*$/, '') : '重击')
+            }
+            track.actions.push(newAction)
             track.actions.sort((a, b) => a.startTime - b.startTime)
             commitState()
             return
