@@ -433,7 +433,8 @@ const attackTotalDuration = computed(() => {
   if (!char) return 0
   const list = Array.isArray(char.attack_segments) ? char.attack_segments : null
   if (!list) return Number(char.attack_duration) || 0
-  return list.reduce((acc, seg) => acc + (Number(seg?.duration) || 0), 0)
+  const total = list.reduce((acc, seg) => acc + (Number(seg?.duration) || 0), 0)
+  return Math.round(total * 1000) / 1000
 })
 
 function applyAttackSegmentToAll({ includeDuration = false } = {}) {
@@ -2200,7 +2201,7 @@ function saveData() {
                   <div class="tick-top">
                     <div class="tick-idx">HIT {{ tIdx + 1 }}</div>
                     <div class="tick-inputs">
-                      <div class="t-group"><label>时间(s)</label><input type="number" v-model.number="tick.offset" step="0.1" class="mini-input"></div>
+                      <div class="t-group"><label>时间(s)</label><input type="number" v-model.number="tick.offset" step="any" class="mini-input"></div>
                       <div class="t-group"><label style="color:#ff7875">失衡值</label><input type="number" v-model.number="tick.stagger" class="mini-input"></div>
                       <div class="t-group"><label style="color:#ffd700">回复技力</label><input type="number" v-model.number="tick.sp" class="mini-input"></div>
                     </div>
@@ -2367,7 +2368,7 @@ function saveData() {
                   <div class="tick-top">
                     <div class="tick-idx">HIT {{ tIdx + 1 }}</div>
                     <div class="tick-inputs">
-                      <div class="t-group"><label>时间(s)</label><input type="number" v-model.number="tick.offset" step="0.1" class="mini-input"></div>
+                      <div class="t-group"><label>时间(s)</label><input type="number" v-model.number="tick.offset" step="any" class="mini-input"></div>
                       <div class="t-group"><label style="color:#ff7875">失衡值</label><input type="number" v-model.number="tick.stagger" class="mini-input"></div>
                       <div class="t-group"><label style="color:#ffd700">回复技力</label><input type="number" v-model.number="tick.sp" class="mini-input"></div>
                     </div>
