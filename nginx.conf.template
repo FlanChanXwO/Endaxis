@@ -1,0 +1,54 @@
+user  nginx;
+worker_processes  auto;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    
+    # 开启 Gzip
+    gzip on;
+    gzip_min_length 1k;
+    gzip_types text/plain application/javascript text/css application/xml;
+
+    # --- HTTP 重定向服务器 ---
+    server {
+        listen ${HTTP_PORT};
+        server_name ${HOSTNAME};
+        
+        # 强制跳转到 HTTPS (使用配置的 HTTPS 端口)
+        location / {
+            return 301 https://$host:${HTTPS_PORT}$request_uri;
+        }
+    }
+
+    # --- HTTPS 主服务器 ---
+    server {
+        listen ${HTTPS_PORT} ssl;
+        server_name ${HOSTNAME};
+
+        # 证书路径 (脚本会自动维护这两个文件)
+        ssl_certificate     /etc/nginx/certs/server.crt;
+        ssl_certificate_key /etc/nginx/certs/server.key;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Vue 路由支持
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+        
+        # 静态资源缓存配置 (可选，这里写死为开启，也可改为变量)
+        location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml|svg)$ {
+            expires 30d;
+            add_header Cache-Control "public, no-transform";
+        }
+    }
+}
