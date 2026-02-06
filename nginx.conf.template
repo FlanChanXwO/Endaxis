@@ -19,7 +19,7 @@ http {
         listen ${HTTP_PORT};
         server_name ${HOSTNAME};
         
-        # 强制跳转到 HTTPS (使用配置的 HTTPS 端口)
+        # 强制跳转到 HTTPS
         location / {
             return 301 https://$host:${HTTPS_PORT}$request_uri;
         }
@@ -29,8 +29,6 @@ http {
     server {
         listen ${HTTPS_PORT} ssl;
         server_name ${HOSTNAME};
-
-        # 证书路径 (脚本会自动维护这两个文件)
         ssl_certificate     /etc/nginx/certs/server.crt;
         ssl_certificate_key /etc/nginx/certs/server.key;
 
@@ -45,7 +43,6 @@ http {
             try_files $uri $uri/ /index.html;
         }
         
-        # 静态资源缓存配置 (可选，这里写死为开启，也可改为变量)
         location ~* \.(jpg|jpeg|gif|png|css|js|ico|xml|svg)$ {
             expires 30d;
             add_header Cache-Control "public, no-transform";
