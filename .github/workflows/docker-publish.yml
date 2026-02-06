@@ -1,0 +1,39 @@
+name: Build and Publish Docker Image
+
+# 触发条件：
+# 1. 当代码推送到 main 分支时
+# 2. 手动触发 (workflow_dispatch)
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 设置 Docker Buildx (用于构建镜像)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. 登录 Docker Hub (使用我们在 Secret 里配置的账号密码)
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 4. 构建并推送镜像
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # 替换下方你的用户名和仓库名
+          # 例如: cindy/endaxis:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/endaxis:latest
