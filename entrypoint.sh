@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # --- 1. 配置路径 ---
-SSL_WATCH_DIR="/app/ssl"           # 外部挂载的压缩包目录
-SSL_DEST_DIR="/etc/nginx/certs"    # Nginx 实际读取证书的目录
-TEMP_DIR="/tmp/ssl_extract"        # 临时解压区
+SSL_WATCH_DIR="/app/ssl"
+SSL_DEST_DIR="/etc/nginx/certs"
+TEMP_DIR="/tmp/ssl_extract"
 
 mkdir -p "$SSL_DEST_DIR"
 mkdir -p "$TEMP_DIR"
@@ -19,7 +19,18 @@ generate_dummy_cert() {
     fi
 }
 
-# --- 3. 核心函数: 处理 ZIP ---
+# --- 3. 核心函数: 安全重载 ---
+reload_nginx() {
+    # 检查 Nginx PID 是否存在，如果存在才重载
+    if [ -f /var/run/nginx.pid ]; then
+        echo "正在重载 Nginx..."
+        nginx -s reload
+    else
+        echo "Nginx 尚未完全启动，跳过本次重载 (证书将在启动时自动加载)"
+    fi
+}
+
+# --- 4. 核心函数: 处理 ZIP ---
 process_ssl_zip() {
     local zip_file="$1"
     echo "发现证书包: $zip_file"
@@ -35,28 +46,36 @@ process_ssl_zip() {
     if [[ -n "$crt_file" && -n "$key_file" ]]; then
         mv "$crt_file" "$SSL_DEST_DIR/server.crt"
         mv "$key_file" "$SSL_DEST_DIR/server.key"
-        echo "证书更新成功，正在重载 Nginx..."
-        nginx -s reload
+        echo "证书文件已部署到 $SSL_DEST_DIR"
+        reload_nginx
     else
         echo "错误: 压缩包内未找到 .crt 或 .key 文件"
     fi
+    # 删除压缩包，防止重复处理
     rm -f "$zip_file"
 }
 
-# --- 4. 启动逻辑 ---
+# --- 5. 启动逻辑 ---
 
 # 生成兜底证书
 generate_dummy_cert
 
 # 导出环境变量默认值
 export HTTP_PORT=${HTTP_PORT:-80}
-export HTTPS_PORT=${HTTPS_PORT:-5130} # 默认 HTTPS 端口设为 5130
+export HTTPS_PORT=${HTTPS_PORT:-5130}
 export HOSTNAME=${HOSTNAME:-localhost}
 
-# 使用 envsubst 替换 nginx 配置模板
-# 注意：这里我们保留 $uri 变量不被替换，只替换我们指定的变量
+# 生成配置文件
 echo "生成 Nginx 配置..."
 envsubst '$HTTP_PORT $HTTPS_PORT $HOSTNAME' < /etc/nginx/templates/nginx.conf.template > /etc/nginx/nginx.conf
+
+# 检查配置是否合法 (为了方便调试，如果配置错误会直接打印出来)
+nginx -t -c /etc/nginx/nginx.conf
+if [ $? -ne 0 ]; then
+    echo "!!! 配置文件生成有误，打印文件内容如下 !!!"
+    cat /etc/nginx/nginx.conf
+    exit 1
+fi
 
 # 启动后台监控
 (
